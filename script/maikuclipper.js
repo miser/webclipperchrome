@@ -608,6 +608,14 @@
 				}
 				cloneNode.css(styleObj);
 				self.removeAttrs(cloneNode);
+                if(/^(img)$/.test(nodeTagName)){
+                    var imgSrc = $(cloneNode[0]).attr('src');
+                    if(!/^http?:\/\/$/.test(imgSrc)){
+                        $(cloneNode[0]).attr('src','http://' + window.location.host + '/' + imgSrc);
+                    }else if(!/^https:\/\/$/.test(imgSrc)){
+                        $(cloneNode[0]).attr('src','https://' + window.location.host + '/' + imgSrc);
+                    }
+                }
 				return cloneNode[0].outerHTML;
 			}
         },

@@ -29,6 +29,6 @@
    "name": "__MSG_ExtensionName__",
    "options_page": "options.html",
    "permissions": [ "tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*" ],
-   "version": "3.1.0",
+   "version": "3.2",
    "web_accessible_resources": [ "popup.html" ]
 }

@@ -419,11 +419,15 @@
                         for(var i = 0, img, l = imgs.length, src; i < l; i++){
                             img = imgs[i];
                             src = img.src;
-                            if(!isToSave(src)) continue;
+                            // 图片的格式不仅仅有gif,jpg,png 可能还有别的
+                            // 也有可能没有扩展名或含有"?"+随机字符串的格式
+                            // 暂时去掉
+                            // if(!isToSave(src)) continue;
                             if(filteredImg[src]) continue;
                             filteredImg[src] = 1;
                             filteredImgTitles.push(img.title || img.alt || '');
                             needReplaceImgs.push(img);
+                            console.log(needReplaceImgs);
                         }
                         self.saveImgs({
                            imgs: Object.keys(filteredImg),
