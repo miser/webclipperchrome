@@ -83,7 +83,6 @@
 	}
 	window.maikuNoteUtil = {
 		createParticularContextMenu: function(host){
-			console.log('recreate context menu, current host is: ' + host)
 			switch(host){
 				case 'weibo.com':
 				case 'www.weibo.com':

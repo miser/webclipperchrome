@@ -2,6 +2,7 @@
 //All right reserved
 (function($) {
     'use strict';
+    var _rootWin = window;
     window.maikuClipper = {
         init: function() {
             var self = this;
@@ -188,44 +189,57 @@
                 content: self.getHTMLByNode($(document.body))
             });
         },
-        createPopup: function() {
+        createMkClipWrap: function(zIndex, height) {
             var self = this;
-            if(self.isCreatedPopup) return;
-            self.isCreatedPopup = true;
-            self.popupZIndex = 20120726;
-            self.popupInstance = $('<div mkclip="true" style="position:fixed;right:8px;top:8px;width:450px;height:450px;\
-            min-height:304px;max-height:644px;background-color:rgba(0,0,0,.5);z-index:;border-radius:3px;box-shadow:0 0 5px 0 #333;overflow:hidden;"></div>').css('z-index', self.popupZIndex).hide().appendTo(document.body).fadeIn();
-            var iframe = $('<iframe frameborder="0" style="width:100%;height:100%;"></iframe>').appendTo(self.popupInstance),
+            if(!self.closePopup) {
+                self.closePopup = function() {
+                    $(document).unbind('keydown.maikuclipperpopup');
+                    self.removeInspector();
+                    self.isCreatedPopup = false;
+                    self.popupInstance.fadeOut(function(e) {
+                        $(this).remove();
+                    });
+                }
+            }
+            var el = $('<div mkclip="true" style="position:fixed;right:8px;top:8px;width:450px;height:' + height + 'px;\
+            background-color:rgba(0,0,0,.5);z-index:;border-radius:3px;\
+            box-shadow:0 0 5px 0 #333;overflow:hidden;"></div>').css('z-index', zIndex).hide().appendTo(document.body).fadeIn();
+            var iframe = $('<iframe frameborder="0" style="width:100%;height:100%;"></iframe>').appendTo(el),
                 iframeWin = iframe[0].contentWindow,
                 iframeDoc = iframe[0].contentDocument || iframeWin.document;
-            iframe[0].src = chrome.extension.getURL('popup.html');
-            self.initDivHeight = parseInt(self.popupInstance.css('height'));
+            return {
+                wrap: el,
+                iframe: iframe
+            }
+        },
+        createLoadingEl: function(zIndex) {
+            var obj = this.createMkClipWrap(zIndex, 150);
+            obj.iframe[0].src = chrome.extension.getURL('loading.html');
+            return obj.wrap;
+        },
+        createClipEl: function(zIndex) {
+            var self = this;
+            var obj = this.createMkClipWrap(zIndex, 450);
+            obj.iframe[0].src = chrome.extension.getURL('popup.html');
+            self.initDivHeight = parseInt(obj.wrap.css('height'));
             var judgeHeight = function(h) {
                     if(h < 304) return 304;
                     if(h > 644) return 644;
                     return h;
                 }
             self.changeHeight = function(changeStep) {
-                self.popupInstance.css('height', judgeHeight(self.initDivHeight + changeStep));
+                obj.wrap.css('height', judgeHeight(self.initDivHeight + changeStep));
             }
             self.positionTop = function() {
-                self.popupInstance.css({
+                obj.wrap.css({
                     top: 8,
                     bottom: 'auto'
                 });
             }
             self.positionBottom = function() {
-                self.popupInstance.css({
+                obj.wrap.css({
                     top: 'auto',
                     bottom: 8
-                });
-            }
-            self.closePopup = function() {
-                $(document).unbind('keydown.maikuclipperpopup');
-                self.removeInspector();
-                self.isCreatedPopup = false;
-                self.popupInstance.fadeOut(function(e) {
-                    $(this).remove();
                 });
             }
 
@@ -234,6 +248,34 @@
                     self.closePopup();
                 }
             });
+            return obj.wrap;
+        },
+        createPopup: function() {
+            var self = this;
+            if(self.isCreatedPopup) return;
+            self.popupZIndex = 20120726;
+            self.isCreatedPopup = true;
+
+            var loadingEl, ClipEl;
+
+            function showPage() {
+                if(self.isLoadComplated == true) {
+                    if(ClipEl) return;
+                    if(loadingEl) loadingEl.remove();
+                    self.popupInstance = ClipEl = self.createClipEl(self.popupZIndex);
+                    return true;
+                } else {
+                    if(loadingEl) return;
+                    self.popupInstance = loadingEl = self.createLoadingEl(self.popupZIndex);
+                    return false;
+                }
+            }
+            showPage();
+            var handler = setInterval(function() {
+                if(showPage()) {
+                    clearInterval(handler);
+                }
+            }, 500);
         },
         addWindowEventListener: function() {
             var self = this;
@@ -747,5 +789,6 @@
     }
     $(function() {
         maikuClipper.init();
+        maikuClipper.isLoadComplated = true;
     });
 })(jQuery);

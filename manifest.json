@@ -1,21 +1,21 @@
 {
    "background": {
-      "scripts": [ "script/lib/jquery-1.7.2.min.js", "script/settings.js", "script/particularsites.js", "script/background.js" ]
+      "scripts": ["script/lib/jquery-1.7.2.min.js", "script/settings.js", "script/particularsites.js", "script/background.js"]
    },
    "browser_action": {
       "default_icon": "images/icons/19x19.png",
       "default_title": "__MSG_BrowserActionTitle__"
    },
-   "content_scripts": [ {
-      "js": [ "script/lib/jquery-1.7.2.min.js", "script/maikuclipper.js", "script/lib/extract-content.js" ],
-      "matches": [ "http://*/*", "https://*/*" ]
+   "content_scripts": [{
+      "js": ["script/lib/jquery-1.7.2.min.js", "script/maikuclipper.js", "script/lib/extract-content.js"],
+      "matches": ["http://*/*", "https://*/*"]
    }, {
-      "js": [ "script/sites/douban.com.review.js" ],
-      "matches": [ "http://*.douban.com/review/*" ]
+      "js": ["script/sites/douban.com.review.js"],
+      "matches": ["http://*.douban.com/review/*"]
    }, {
-      "js": [ "script/sites/weibo.com.js" ],
-      "matches": [ "http://weibo.com/*", "http://*.weibo.com/*" ]
-   } ],
+      "js": ["script/sites/weibo.com.js"],
+      "matches": ["http://weibo.com/*", "http://*.weibo.com/*"]
+   }],
    "default_locale": "zh_CN",
    "description": "__MSG_ExtensionDescription__",
    "icons": {
@@ -28,7 +28,7 @@
    "manifest_version": 2,
    "name": "__MSG_ExtensionName__",
    "options_page": "options.html",
-   "permissions": [ "tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*" ],
-   "version": "3.2",
-   "web_accessible_resources": [ "popup.html" ]
+   "permissions": ["tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*","unlimitedStorage"],
+   "version": "3.3",
+   "web_accessible_resources": ["popup.html", "loading.html"]
 }
