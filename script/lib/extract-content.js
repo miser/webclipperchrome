@@ -627,7 +627,6 @@ if (typeof ExtractContentJS == 'undefined') {
                         return Leaf.mergeStatistics(prev, curr);
                     });
                 }
-
                 var nolinklen = st.noLinkText.length;
                 var links = st.linkCount;
                 var listlen = st.listTextLength;
@@ -702,6 +701,7 @@ if (typeof ExtractContentJS == 'undefined') {
                 var r = [];
                 var buf = [];
                 var leaves = 0;
+                //mark note
                 var limit = self.opt.limit.text;
 
                 var flush = function(flag) {
@@ -743,7 +743,6 @@ if (typeof ExtractContentJS == 'undefined') {
 
                 rec(node, 0, {});
                 flush(true);
-
                 return r;
             }
         });

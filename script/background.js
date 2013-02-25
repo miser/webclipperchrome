@@ -309,62 +309,87 @@
                                 serializeSucceedImgIndexByOrder[serializeSucceedImgIndex[i]] = i.toString();
                             }
                             self.notifyHTML(chrome.i18n.getMessage('isUploadingImagesTip'), false);
-                            $.ajax({
-                                url: self.baseUrl + "/attachment/savemany/",
-                                type: "POST",
-                                data: formData,
-                                processData: false,
-                                contentType: false,
-                                success: function(data) {
-                                    if(data.error) {
-                                        //todo: server error, pending note...
-                                        console.log('Internal error: ');
-                                        console.log(data.error);
-                                        if(failCallback) {
-                                            failCallback(true);
-                                        }
-                                        removeFiles();
-                                        return;
-                                    }
-                                    if(successCallback) {
-                                        //is replace images in page content
-                                        successCallback(data, serializeSucceedImgIndexByOrder, data[0].NoteID);
-                                    } else {
-                                        var d, noteId = data[0].NoteID,
-                                            realIndex;
-                                        for(var i = 0, l = totalImgNum; i < l; i++) {
-                                            realIndex = serializeSucceedImgIndexByOrder[i];
-                                            if(realIndex) {
-                                                d = data[realIndex];
-                                                content += '<img src="' + d.Url + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
-                                                delete serializeSucceedImgIndexByOrder[i];
-                                            } else {
-                                                content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+
+                            var currentCompletedCount = 0;
+                            for(var itemIndex in formDataQueue) {
+                                var formDataItem = formDataQueue[itemIndex];
+                                (function(index) {
+                                    $.ajax({
+                                        url: self.baseUrl + "/attachment/savemany/",
+                                        type: "POST",
+                                        data: formDataItem,
+                                        processData: false,
+                                        contentType: false,
+                                        success: function(data) {
+                                            if(data.error) {
+                                                //todo: server error, pending note...
+                                                console.log('Internal error: ');
+                                                console.log(data.error);
+                                                if(failCallback) {
+                                                    failCallback(true);
+                                                }
+                                                removeFiles();
+                                                return;
                                             }
+                                            if(successCallback) {
+                                                //is replace images in page content
+                                                successCallback(data, needReplaceImgsQueue[index], data[0].NoteID, ++currentCompletedCount >= formDataQueue.length);
+                                            } else {
+                                                var d, noteId = data[0].NoteID,
+                                                    realIndex;
+                                                for(var i = 0, l = totalImgNum; i < l; i++) {
+                                                    realIndex = serializeSucceedImgIndexByOrder[i];
+                                                    if(realIndex) {
+                                                        d = data[realIndex];
+                                                        content += '<img src="' + d.Url + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                                                        delete serializeSucceedImgIndexByOrder[i];
+                                                    } else {
+                                                        content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                                                    }
+                                                }
+                                                if(++currentCompletedCount >= formDataQueue.length) {
+                                                    self.saveNote(msg.title, msg.sourceurl, content, msg.tags, '', noteId);
+                                                }
+                                            }
+                                            if(currentCompletedCount >= formDataQueue.length) {
+                                                removeFiles();
+                                            }
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown) {
+                                            console.log('xhr error: ')
+                                            console.log(textStatus)
+                                            removeFiles();
+                                            self.notifyHTML(chrome.i18n.getMessage('UploadImagesFailed'));
                                         }
-                                        self.saveNote(msg.title, msg.sourceurl, content, msg.tags, '', noteId);
-                                    }
-                                    removeFiles();
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    console.log('xhr error: ')
-                                    console.log(textStatus)
-                                    removeFiles();
-                                    self.notifyHTML(chrome.i18n.getMessage('UploadImagesFailed'));
-                                }
-                            });
+                                    });
+                                })(itemIndex);
+                            }
                         }
-                    },
-                    formData = new FormData();
-                formData.append('type', maikuNoteOptions.imageAttachment ? 'Attachment' : 'Embedded');
-                formData.append('categoryId', msg.categoryId || '');
-                formData.append('id', msg.id || '');
+                    };
+                // formData = new FormData();
+                // formData.append('type', maikuNoteOptions.imageAttachment ? 'Attachment' : 'Embedded');
+                // formData.append('categoryId', msg.categoryId || '');
+                // formData.append('id', msg.id || '');
+                var maxUploadSize = 1024 * 1024 * 10,
+                    currentUploadSize = 0,
+                    formDataQueue = [],
+                    needReplaceImgsQueue = [],
+                    formData, needReplaceImgsAry;
                 for(var i = 0, l = totalImgNum; i < l; i++) {
                     self.downloadImage(imgs[i], i, function(file, idx) {
                         serializeSucceedImgNum++;
-                        serializeSucceedImgIndex.push(idx);
+                        // serializeSucceedImgIndex.push(idx);
+                        if(currentUploadSize + file.size > maxUploadSize || !formData || !needReplaceImgsAry) {
+                            formData = self.createFormData(msg.id, maikuNoteOptions.imageAttachment, msg.categoryId);
+                            formDataQueue.push(formData);
+                            needReplaceImgsAry = [];
+                            needReplaceImgsQueue.push(needReplaceImgsAry)
+                            currentUploadSize = 0;
+                        }
+                        currentUploadSize += file.size;
                         formData.append('file' + idx, file);
                         files[idx] = file;
+                        needReplaceImgsAry.push(imgs[idx])
                         checkComplete();
                     }, function(idx) {
                         serializeFailedImgNum++;
@@ -374,6 +399,13 @@
             } else {
                 saveNormalNote();
             }
+        },
+        createFormData: function(noteId, type, categoryId) {
+            var f = new FormData();
+            f.append('type', type ? 'Attachment' : 'Embedded');
+            f.append('categoryId', categoryId || '');
+            f.append('id', noteId || '');
+            return f;
         },
         initExtensionConnect: function() {
             var self = this;
@@ -448,7 +480,6 @@
                             filteredImg[src] = 1;
                             filteredImgTitles.push(img.title || img.alt || '');
                             needReplaceImgs.push(img);
-                            console.log(needReplaceImgs);
                         }
                         self.saveImgs({
                             imgs: Object.keys(filteredImg),
@@ -456,19 +487,24 @@
                             title: msg.title,
                             sourceurl: msg.sourceurl,
                             categoryId: msg.categoryid
-                        }, function(uploadedImageData, serializeSucceedImgIndexByOrder, noteId) {
-                            var realIndex, d;
-                            for(var i = 0, l = needReplaceImgs.length; i < l; i++) {
-                                realIndex = serializeSucceedImgIndexByOrder[i];
-                                if(realIndex) {
-                                    d = uploadedImageData[realIndex];
-                                    needReplaceImgs[i].src = d.Url;
-                                    delete serializeSucceedImgIndexByOrder[i];
+                        }, function(uploadedImageData, needReplaceQueueItem, noteId, isSave) {
+                            var realIndex, d, needImg;
+                            for(var i = 0, l = uploadedImageData.length; i < l; i++) {
+                                if((d = uploadedImageData[i]) && (needImg = needReplaceQueueItem[i])) {
+                                    needImg.src = d.Url;
                                 }
+                                // realIndex = serializeSucceedImgIndexByOrder[i];
+                                // if(realIndex) {
+                                //     d = uploadedImageData[realIndex];
+                                //     needReplaceImgs[i].src = d.Url;
+                                //     delete serializeSucceedImgIndexByOrder[i];
+                                // }
                             }
-                            self.saveNote(msg.title, msg.sourceurl, content.html(), msg.tags, msg.categoryid, noteId, '', function() {
-                                self.closePopup();
-                            });
+                            if(isSave) {
+                                self.saveNote(msg.title, msg.sourceurl, content.html(), msg.tags, msg.categoryid, noteId, '', function() {
+                                    self.closePopup();
+                                });
+                            }
                         }, function() {
                             //all images upload failed or serialize failed, just save the clipped content
                             normalSave();
@@ -1018,4 +1054,555 @@
         maikuNoteOptions = window.maikuNoteOptions;
         maikuNote.init();
     });
+
+    function createTask() {
+        var tasks = [];
+        //
+        //1.每个任务以一篇笔记为单位
+        //2.每个任务有一个笔记ID
+        //3.每个任务有一个标题
+        //4.每个
+        //
+    }
+    var MKSyncTaskQueue = function() {
+            var queue = [],
+                currentTask;
+
+            return {
+                add: function(task) {
+                    queue.push(task)
+                },
+                start: function() {
+                    currentTask = queue.shift();
+
+                    if(!currentTask) return;
+
+                    //每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
+                    currentTask.sync(function() {
+                        setTimeout(function() {
+                            arguments.callee();
+                        }, 1000 * 5)
+                    })
+                }
+            }
+        }();
+
+    var MKSyncTask = function(noteData) {
+            this.note = new MkSyncNode(noteData);
+            this.images = [];
+        }
+    MKSyncTask.prototype.sync = function(isAutoImage) {
+        var self = this,
+            note = self.note;
+
+
+        var ep = EventProxy.create("note.init", function(n) {
+            var imgs = note.content.find('img'),
+                imgsObj = [];
+            if(imgs.length && isAutoImage) {
+                for(var i = 0; i < imgs.length; i++) {
+                    var img = img[i];
+                    if(img in imgsObj) continue;
+                    this.images.push(img: img);
+                }
+            } else {
+
+            }
+
+            /*
+if(imgs.length > 0) {
+                        for(var i = 0, img, l = imgs.length, src; i < l; i++) {
+                            img = imgs[i];
+                            src = img.src;
+                            // 图片的格式不仅仅有gif,jpg,png 可能还有别的
+                            // 也有可能没有扩展名或含有"?"+随机字符串的格式
+                            // 暂时去掉
+                            // if(!isToSave(src)) continue;
+                            if(filteredImg[src]) continue;
+                            filteredImg[src] = 1;
+                            filteredImgTitles.push(img.title || img.alt || '');
+                            needReplaceImgs.push(img);
+                        }
+                        self.saveImgs({
+                            imgs: Object.keys(filteredImg),
+                            imgTitles: filteredImgTitles,
+                            title: msg.title,
+                            sourceurl: msg.sourceurl,
+                            categoryId: msg.categoryid
+                        }, function(uploadedImageData, needReplaceQueueItem, noteId, isSave) {
+                            var realIndex, d, needImg;
+                            for(var i = 0, l = uploadedImageData.length; i < l; i++) {
+                                if((d = uploadedImageData[i]) && (needImg = needReplaceQueueItem[i])) {
+                                    needImg.src = d.Url;
+                                }
+                                // realIndex = serializeSucceedImgIndexByOrder[i];
+                                // if(realIndex) {
+                                //     d = uploadedImageData[realIndex];
+                                //     needReplaceImgs[i].src = d.Url;
+                                //     delete serializeSucceedImgIndexByOrder[i];
+                                // }
+                            }
+                            if(isSave) {
+                                self.saveNote(msg.title, msg.sourceurl, content.html(), msg.tags, msg.categoryid, noteId, '', function() {
+                                    self.closePopup();
+                                });
+                            }
+                        }, function() {
+                            //all images upload failed or serialize failed, just save the clipped content
+                            normalSave();
+                        });
+*/
+        });
+        ep.fail(function(err) {
+            if(err == 'notlogin') {
+                self.notifyHTML(chrome.i18n.getMessage('NotLogin'));
+            } else {
+                self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
+            }
+        })
+
+        function init(note, failCallback) {
+            // var noteid = note
+            $.ajax({
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                type: 'POST',
+                url: self.baseUrl + '/note/save',
+                data: JSON.stringify(dataObj),
+                success: function(data) {
+                    if(data.error) {
+                        ep.emit('error', data.error);
+                        return;
+                    }
+                    /**
+                     * 提示用户笔记初始化完成
+                     * to do...
+                     */
+
+                    note.noteid = data.Note.NoteID;
+                    ep.emit('note.init', note)
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    ep.emit('error');
+                }
+            });
+        }
+        /**
+            保存笔记的标题获得笔记id
+            if(含有img){
+                把所有图片find出，放入一个列队里
+                将所有图片下载到本地文件系统中
+                将下载成功的图片替换掉找出来的img
+                将笔记正文upload
+            } else {
+                将笔记正文upload
+            }
+        */
+    }
+    var MkSyncNode = function(noteData) {
+            var defaultData = {
+                title: '[未命名笔记]',
+                sourceurl: '',
+                notecontent: '',
+                tags: '',
+                categoryid: '',
+                noteid: '',
+                importance: 0,
+                /**
+                 * noCreated:未创建,init:初始化,downloadImg:下载图片,upload:上传笔记
+                 */
+                processState: 'noCreate'
+            }
+            this.note = noteData || {};
+            $.extend(this.note, defaultData);
+            this.note.content = $('<div></div>').append(this.note.content);
+        }
+    MkSyncNode.prototype.init = function() {
+
+    }
+    MkSyncNode.prototype.save = function() {
+
+    }
+    MkSyncNode.prototype.delete = function() {
+
+    }
+    MkSyncNode.prototype.downloadImages = function() {
+
+    }
+    var MkSyncImage = function(imgEl) {
+            this.image = imgEl;
+        }
+    MkSyncImage.prototype.download = function(callback, errorFn) {
+        var self = this,
+            image = self.image,
+            url = image.scr,
+            xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function(e) {
+            if(this.status == 200) {
+                var suffix = url.split('.'),
+                    blob = new Blob([this.response], {
+                        type: 'image/' + suffix[suffix.length - 1]
+                    }),
+                    parts = url.split('/'),
+                    fileName = parts[parts.length - 1];
+                MkFileSystem(this.response.byteLength, fileName, blob, function(file) {
+                    //todo... 成功
+                }, function() {
+                    //todo... 失败
+                })
+            }
+        }
+        xhr.onerror = function() {
+            console.log('retrieve remote image xhr onerror')
+            // errorCallback && errorCallback(imgIndex);
+        }
+        xhr.onabort = function() {
+            console.log('retrieve remote image xhr onabort')
+            // errorCallback && errorCallback(imgIndex);
+        }
+        xhr.send(null);
+        /*
+        downloadImage: function(url, imgIndex, successCallback, errorCallback) {
+            var self = this;
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function(e) {
+                if(this.status == 200) {
+                    var suffix = url.split('.'),
+                        blob = new Blob([this.response], {
+                            type: 'image/' + suffix[suffix.length - 1]
+                        }),
+                        parts = url.split('/'),
+                        fileName = parts[parts.length - 1];
+                    window.requestFileSystem(TEMPORARY, this.response.byteLength, function(fs) {
+                        self.writeBlobAndSendFile(fs, blob, fileName, successCallback, errorCallback, imgIndex);
+                    }, self.onFileError);
+                }
+            }
+            xhr.onerror = function() {
+                console.log('retrieve remote image xhr onerror')
+                errorCallback && errorCallback(imgIndex);
+            }
+            xhr.onabort = function() {
+                console.log('retrieve remote image xhr onabort')
+                errorCallback && errorCallback(imgIndex);
+            }
+            xhr.send(null);
+        },
+
+    */
+
+
+        /*
+        var self = this,
+                content = '',
+                imgs = msg.imgs,
+                titles = msg.imgTitles,
+                saveNormalNote = function() {
+                    for(var i = 0, l = imgs.length; i < l; i++) {
+                        content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                    }
+                    self.saveNote(msg.title, msg.sourceurl, content, msg.tags);
+                }
+            if(maikuNoteOptions.serializeImg) {
+                //retrieve remote images
+                self.notifyHTML(chrome.i18n.getMessage('isRetrievingRemoteImgTip'), false);
+                var totalImgNum = imgs.length,
+                    serializeSucceedImgNum = 0,
+                    serializeFailedImgNum = 0,
+                    serializeSucceedImgIndex = [],
+                    serializeSucceedImgIndexByOrder = {},
+                    files = {},
+                    removeFiles = function() {
+                        for(var idx in files) {
+                            self.removeFile(files[idx].name, files[idx].size);
+                        }
+                    },
+                    checkComplete = function() {
+                        if(serializeSucceedImgNum + serializeFailedImgNum == totalImgNum) {
+                            if(serializeFailedImgNum == totalImgNum) {
+                                //all images retrieve failed
+                                if(failCallback) {
+                                    //is replace images in page content
+                                    failCallback(true);
+                                } else {
+                                    self.notifyHTML(chrome.i18n.getMessage('RetrieveImagesFailed'));
+                                    saveNormalNote();
+                                }
+                                return false;
+                            }
+                            for(var i = 0, l = serializeSucceedImgIndex.length; i < l; i++) {
+                                serializeSucceedImgIndexByOrder[serializeSucceedImgIndex[i]] = i.toString();
+                            }
+                            self.notifyHTML(chrome.i18n.getMessage('isUploadingImagesTip'), false);
+
+                            var currentCompletedCount = 0;
+                            for(var itemIndex in formDataQueue) {
+                                var formDataItem = formDataQueue[itemIndex];
+                                (function(index) {
+                                    $.ajax({
+                                        url: self.baseUrl + "/attachment/savemany/",
+                                        type: "POST",
+                                        data: formDataItem,
+                                        processData: false,
+                                        contentType: false,
+                                        success: function(data) {
+                                            if(data.error) {
+                                                //todo: server error, pending note...
+                                                console.log('Internal error: ');
+                                                console.log(data.error);
+                                                if(failCallback) {
+                                                    failCallback(true);
+                                                }
+                                                removeFiles();
+                                                return;
+                                            }
+                                            if(successCallback) {
+                                                //is replace images in page content
+                                                successCallback(data, needReplaceImgsQueue[index], data[0].NoteID, ++currentCompletedCount >= formDataQueue.length);
+                                            } else {
+                                                var d, noteId = data[0].NoteID,
+                                                    realIndex;
+                                                for(var i = 0, l = totalImgNum; i < l; i++) {
+                                                    realIndex = serializeSucceedImgIndexByOrder[i];
+                                                    if(realIndex) {
+                                                        d = data[realIndex];
+                                                        content += '<img src="' + d.Url + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                                                        delete serializeSucceedImgIndexByOrder[i];
+                                                    } else {
+                                                        content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                                                    }
+                                                }
+                                                if(++currentCompletedCount >= formDataQueue.length) {
+                                                    self.saveNote(msg.title, msg.sourceurl, content, msg.tags, '', noteId);
+                                                }
+                                            }
+                                            if(currentCompletedCount >= formDataQueue.length) {
+                                                removeFiles();
+                                            }
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown) {
+                                            console.log('xhr error: ')
+                                            console.log(textStatus)
+                                            removeFiles();
+                                            self.notifyHTML(chrome.i18n.getMessage('UploadImagesFailed'));
+                                        }
+                                    });
+                                })(itemIndex);
+                            }
+                        }
+                    };
+                // formData = new FormData();
+                // formData.append('type', maikuNoteOptions.imageAttachment ? 'Attachment' : 'Embedded');
+                // formData.append('categoryId', msg.categoryId || '');
+                // formData.append('id', msg.id || '');
+                var maxUploadSize = 1024 * 1024 * 10,
+                    currentUploadSize = 0,
+                    formDataQueue = [],
+                    needReplaceImgsQueue = [],
+                    formData, needReplaceImgsAry;
+                for(var i = 0, l = totalImgNum; i < l; i++) {
+                    self.downloadImage(imgs[i], i, function(file, idx) {
+                        serializeSucceedImgNum++;
+                        // serializeSucceedImgIndex.push(idx);
+                        if(currentUploadSize + file.size > maxUploadSize || !formData || !needReplaceImgsAry) {
+                            formData = self.createFormData(msg.id, maikuNoteOptions.imageAttachment, msg.categoryId);
+                            formDataQueue.push(formData);
+                            needReplaceImgsAry = [];
+                            needReplaceImgsQueue.push(needReplaceImgsAry)
+                            currentUploadSize = 0;
+                        }
+                        currentUploadSize += file.size;
+                        formData.append('file' + idx, file);
+                        files[idx] = file;
+                        needReplaceImgsAry.push(imgs[idx])
+                        checkComplete();
+                    }, function(idx) {
+                        serializeFailedImgNum++;
+                        checkComplete();
+                    });
+                }
+            } else {
+                saveNormalNote();
+            }
+        */
+    }
+
+    var MkSyncImages = function(note, imgs, option) {
+            this.images = imgs;
+            this.note = note;
+            this.option = option || {};
+        }
+    MkSyncImage.prototype.download = function() {
+        /**
+         * 判断是否登陆
+         * todo...
+         */
+        var self = this,
+            images = self.images,
+            note = self.note,
+            option = self.option,
+            downloadState = {
+                success: 'download-success',
+                error: 'download-error'
+            }
+
+
+        for(var i = 0; i < images.length; i++) {
+            images[i].download(function(file) {
+                this.file = file;
+                this.state = downloadState.success;
+                var imagesCompletedAry = getCompletedAry();
+                if(imagesCompletedAry) {
+                    var dataformQueue = packDataForm(imagesCompletedAry);
+                    self.upload(dataformQueue);
+                }
+            }, function() {
+                this.state = downloadState.error;
+            })
+        }
+
+        function packDataForm(packImages) {
+            var maxUploadSize = 1024 * 1024 * 10,
+                currentUploadSize = 0,
+                formDataQueue = [],
+                formData;
+            for(var i = 0; i < packImages.length; i++) {
+                var file = packImages[i].file;
+                if(currentUploadSize + file.size > maxUploadSize || !formData) {
+                    formData = createFormData();
+                    formDataQueue.push(formData);
+                    currentUploadSize = 0;
+                }
+                currentUploadSize += file.size;
+                formData.append('file' + index, file);
+            }
+            return formDataQueue;
+        }
+
+        function getCompletedAry() {
+            var successCount = 0,
+                errorCount = 0,
+                completedAry = [];
+            for(var i = 0; i < images.length; i++) {
+                var image = images[i];
+                if(image.state == downloadState.success) {
+                    successCount++;
+                    completedAry.push(image);
+                } else if(image.state == downloadState.error) {
+                    errorCount++;
+                } else {
+                    return;
+                }
+            }
+            if(errorCount == images.length) {
+                //todo... 如果都是错误
+                return;
+            }
+            return completedAry;
+        }
+
+        function createFormData() {
+            var f = new FormData();
+            f.append('type', option.type ? 'Attachment' : 'Embedded');
+            f.append('categoryId', note.categoryid || '');
+            f.append('id', note.noteid || '');
+            return f;
+        },
+    }
+    MkSyncImage.prototype.upload = function(formDataQueue, successCallback) {
+        var self = this,
+            images = self.images,
+            note = self.note,
+            option = self.option;
+        for(var itemIndex in formDataQueue) {
+            var formDataItem = formDataQueue[itemIndex];
+            (function(index) {
+                $.ajax({
+                    url: self.baseUrl + "/attachment/savemany/",
+                    type: "POST",
+                    data: formDataItem,
+                    processData: false,
+                    contentType: false,
+                    success: function(data) {
+                        if(data.error) {
+                            // if(failCallback) {
+                            //     failCallback(true);
+                            // }
+                            // removeFiles();
+                            return;
+                        }
+                        if(successCallback) {
+                            //is replace images in page content
+                            successCallback(data, needReplaceImgsQueue[index], data[0].NoteID, ++currentCompletedCount >= formDataQueue.length);
+                        } else {
+                            var item, noteId = data[0].NoteID,
+                                realIndex;
+                            for(var i = 0, l = formDataItem.length; i < l; i++) {
+                                var image = formDataItem[i];
+                                if(image) {
+                                    item = data[realIndex];
+                                    content += '<img src="' + item.Url + '" title="" alt=""><br />';
+                                    delete serializeSucceedImgIndexByOrder[i];
+                                } else {
+                                    content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                                }
+                            }
+                            if(++currentCompletedCount >= formDataQueue.length) {
+                                self.saveNote(msg.title, msg.sourceurl, content, msg.tags, '', noteId);
+                            }
+                        }
+                        if(currentCompletedCount >= formDataQueue.length) {
+                            removeFiles();
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        // console.log('xhr error: ')
+                        // console.log(textStatus)
+                        // removeFiles();
+                        // self.notifyHTML(chrome.i18n.getMessage('UploadImagesFailed'));
+                    }
+                });
+            })(itemIndex);
+        }
+    }
+    var MkFileSystem = {};
+    MkFileSystem.files = [];
+    MkFileSystem.create(function(size, fileName, blob, callback, errorFn) {
+        window.requestFileSystem(TEMPORARY, size, function(fs) {
+            fs.root.getFile(fileName, {
+                create: true
+            }, function(fileEntry) {
+                fileEntry.createWriter(function(fileWriter) {
+                    fileWriter.onwrite = function(e) {
+                        fileEntry.file(file) {
+                            MkFileSystem.files.push(file)
+                            callback(file);
+                        }
+                        fileWriter.write(blob);
+                    }
+                }, function() {
+                    /**
+                     * 文件写入出错
+                     * to do...
+                     */
+                })
+            }, function() {
+                /**
+                 * 文件创建出错
+                 * to do...
+                 */
+            });
+        }, function() {
+            /**
+             * 文件写入出错
+             * to do...
+             */
+        });
+    });
+
 })(jQuery);

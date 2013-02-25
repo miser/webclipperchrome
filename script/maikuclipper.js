@@ -405,11 +405,12 @@
                         self.addMark($(extractedContent), self.mark.clone(), title.trim());
                     }, 0);
                 } else {
-                    var port = chrome.extension.connect({
-                        name: 'noarticlefrompage'
-                    });
-                    port.postMessage();
-                    return false;
+                    //没有选择的时候选择整个网页
+                    var extractedContent = document.body;
+                    setTimeout(function() {
+                        var title = document.title && document.title.split('-')[0];
+                        self.addMark($(extractedContent), self.mark.clone(), title.trim());
+                    }, 0);
                 }
             }
         },
