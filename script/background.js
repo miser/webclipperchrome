@@ -452,7 +452,28 @@
         },
         savenotefrompopupHandler: function(port) {
             var self = this;
+            // var taskQueue = MKSyncTaskQueue();
             port.onMessage.addListener(function(msg) {
+                var note = {
+                    title: msg.title,
+                    sourceurl: msg.sourceurl,
+                    notecontent: msg.notecontent,
+                    tags: msg.tags,
+                    categoryid: msg.categoryid
+                }
+                console.log(MKSyncTaskQueue)
+                MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                MKSyncTaskQueue.start()
+                //     var defaultData = {
+                //     title: '[未命名笔记]',
+                //     sourceurl: '',
+                //     notecontent: '',
+                //     tags: '',
+                //     categoryid: '',
+                //     noteid: '',
+                //     importance: 0
+                // };
+                /*
                 var normalSave = function() {
                         self.saveNote(msg.title, msg.sourceurl, msg.notecontent, msg.tags, msg.categoryid, '', '', function() {
                             self.closePopup();
@@ -515,6 +536,7 @@
                 } else {
                     normalSave();
                 }
+                */
             });
         },
         allimagesHandlerConnect: function(port) {
@@ -1010,7 +1032,7 @@
             });
         },
         showExtensionGuide: function() {
-            var extensionguideUrl = 'http://notetest.sdo.com/public/extensionguide';
+            var extensionguideUrl = 'http://note.sdo.com/public/extensionguide';
 
             function getVersion() {
                 var details = chrome.app.getDetails();
@@ -1055,44 +1077,67 @@
         maikuNote.init();
     });
 
+    function showTips(key) {
+        if(!key) return;
+        var tips = chrome.i18n.getMessage(key);
+        var ary = [].slice.call(arguments,1);
+        for(var i = 0; i < ary.length; i++) {
+            if(ary[i] == undefined) continue;
+            var reg = new RegExp('\\{' + i + '\\}', 'g')
+            tips = tips.replace(reg, ary[i]);
+        }
+        maikuNote.notifyHTML(tips);
+    }
+
     var MKSyncTaskQueue = function() {
             var queue = [],
                 currentTask;
 
             return {
                 add: function(task) {
-                    /**
-                     * 某某笔记已经放入剪辑列队
-                     */
+                    showTips('syncTaskAdd', task.note.note.title)
                     queue.push(task)
                 },
                 start: function() {
+                    //检查当前的任务是否完成
+                    if(currentTask) {
+                        if(currnetTask.processState == 'success') {
+                            currentTask = null;
+                        } else if(currnetTask.processState == 'fail') {
+                            currnetTask = null;
+                        } else {
+                            return;
+                        }
+                    }
+
                     currentTask = queue.shift();
 
                     if(!currentTask) return;
-                    /**
-                     * 某某笔记正在上传服务器
-                     */
+
                     //每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
                     currentTask.sync(function() {
                         setTimeout(function() {
                             arguments.callee();
                         }, 1000 * 5)
                     })
+                },
+                end: function() {
+                    currentTask = null;
                 }
             }
         }();
 
     var MKEvent = function() {};
-    _.extend(MKevent.prototype, Backbone.Events);
-    MKEvents.prototype.setState = function() {
-        this.trigger('changeState', arguments[0], arguments.split(1));
+    _.extend(MKEvent.prototype, Backbone.Events);
+    MKEvent.prototype.setState = function() {
+        this.trigger('changeState', arguments[0], [].slice.call(arguments,1));
     }
 
     var MKSyncTask = function(noteData, option) {
             this.state = new MKEvent();
             this.note = new MkSyncNode(noteData, option, this.state);
             this.option = option;
+            this.processState = '';
         }
     MKSyncTask.prototype.sync = function() {
         var self = this,
@@ -1109,23 +1154,15 @@
         syncState.on('changeState', function(state, data) {
             if(state == 'note.init') {
                 //笔记正在初始化
-                this.trigger('note.init', data);
+                note.init();
             } else if(state == 'note.init.success') {
-
+                note.saveImage();
             } else if(state == 'note.init.fail') {
-
-            } else if(state == 'save.images') {
-
-            } else if(state == 'save.images.success') {
-
-            } else if(state == 'save.images.fail') {
-
-            } else if(state == 'upload.images') {
-
+                self.processState = 'fail';
             } else if(state == 'upload.images.success') {
 
             } else if(state == 'upload.images.fail') {
-
+                self.delete();
             } else if(state == 'note.saveContent') {
 
             } else if(state == 'note.saveContent.success') {
@@ -1135,11 +1172,18 @@
             } else if(state == 'note.delete') {
 
             } else if(state == 'note.delete.success') {
-
+                self.processState = 'fail';
             } else if(state == 'note.delete.fail') {
-
+                self.processState = 'fail';
             }
         })
+        syncState.setState('note.init')
+    }
+    MKSyncTask.prototype.success = function() {
+
+    }
+    MKSyncTask.prototype.fail = function() {
+
     }
 
     var MkSyncNode = function(noteData, option, stateEvent) {
@@ -1150,41 +1194,40 @@
                 tags: '',
                 categoryid: '',
                 noteid: '',
-                importance: 0,
-                /**
-                 * noCreated:未创建,init:初始化,downloadImg:下载图片,upload:上传笔记
-                 */
-                processState: 'noCreate'
+                importance: 0
             };
             this.option = option || {};
             this.images = [];
-            this.note = noteData || {};
-            $.extend(this.note, defaultData);
-            this.note.content = $('<div></div>').append(this.note.content);
+            noteData = noteData || {};
+            this.note = {};
+            $.extend(this.note, defaultData,noteData);
+            this.note.notecontent = $('<div></div>').append(this.note.notecontent).html();
             if(!stateEvent) {
-                this.stateEvent = {};
-                this.stateEvent.on = function() {};
-                this.stateEvent.trigger = function() {};
-                this.stateEvent.setState = function() {};
+                this.syncState = {};
+                this.syncState.setState = function() {};
+            }
+            else{
+                this.syncState = stateEvent;
             }
         }
 
     MkSyncNode.prototype.init = function() {
-        var self = this;
+        var self = this,
+            option = self.option;
+        showTips('noteInit', self.note.title);
         self.saveNote(function(data) {
             self.note.noteid = data.Note.NoteID;
-            self.syncState.setState('save.images.success', arguments)
+            showTips('noteInitSuccess', self.note.title);
+            self.syncState.setState('note.init.success', arguments)
         }, function() {
-            syncState.setState('save.images.fail', arguments)
+            showTips('noteInitFail', self.note.title);
+            self.syncState.setState('note.init.fail', arguments)
         })
     }
     MkSyncNode.prototype.saveImage = function() {
         var self = this;
-        self.saveImages(function() {
-            self.syncState.setState('note.init.success', arguments)
-        }, function() {
-            self.syncState.setState('note.init.fail', arguments)
-        });
+        showTips('saveImages');
+        self.saveImages();
     }
     MkSyncNode.prototype.saveContent = function() {
         var self = this;
@@ -1210,111 +1253,40 @@
             success: function(data) {
                 if(data.error) {
                     if(data.error == 'notlogin') {
-                        // self.notifyHTML(chrome.i18n.getMessage('NotLogin'));
+                        showTips('NotLogin')
                     } else {
-                        // self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
+                        showTips('SaveNoteFailed')
                     }
                     failCallback && failCallback();
                     return;
                 }
-                successCallback && successCallback();
-                // successCallback && successCallback();
-                // var successTip = chrome.i18n.getMessage('SaveNoteSuccess'),
-                //     viewURL = self.baseUrl + '/note/previewfull/' + data.Note.NoteID,
-                //     viewTxt = chrome.i18n.getMessage('ViewText');
-                // self.notifyHTML(successTip + '<a href="' + viewURL + '" target="_blank" id="closebtn">' + viewTxt + '</a>', 10000);
+                successCallback && successCallback(data);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 failCallback && failCallback();
-                // self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
             }
         });
-        // function init(callback) {
-        //     saveNote(function(data) {
-        //         note.noteid = data.Note.NoteID;
-        //         // * 提示用户笔记初始化完成
-        //         // * todo...
-        //         saveImage();
-        //         this
-        //     }, function() {
-        //         //笔记初始化失败
-        //         //todo...
-        //         // self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
-        //     })
-        // }
-        // function saveImage() {
-        //     self.saveImages(function() {
-        //         //普通保存
-        //         saveContent();
-        //     }, function() {
-        //         //提示错误
-        //         //删除该条笔记
-        //         self.delete();
-        //     });
-        // }
-        // function saveNote(successCallback, failCallback) {
-        //     $.ajax({
-        //         headers: {
-        //             'X-Requested-With': 'XMLHttpRequest'
-        //         },
-        //         type: 'POST',
-        //         url: option.baseUrl + '/note/save',
-        //         data: JSON.stringify(note),
-        //         success: function(data) {
-        //             if(data.error) {
-        //                 if(data.error == 'notlogin') {
-        //                     // self.notifyHTML(chrome.i18n.getMessage('NotLogin'));
-        //                 } else {
-        //                     // self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
-        //                 }
-        //                 failCallback && failCallback();
-        //                 return;
-        //             }
-        //             successCallback && successCallback();
-        //             // successCallback && successCallback();
-        //             // var successTip = chrome.i18n.getMessage('SaveNoteSuccess'),
-        //             //     viewURL = self.baseUrl + '/note/previewfull/' + data.Note.NoteID,
-        //             //     viewTxt = chrome.i18n.getMessage('ViewText');
-        //             // self.notifyHTML(successTip + '<a href="' + viewURL + '" target="_blank" id="closebtn">' + viewTxt + '</a>', 10000);
-        //         },
-        //         error: function(jqXHR, textStatus, errorThrown) {
-        //             failCallback && failCallback();
-        //             // self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
-        //         }
-        //     });
-        // }
-        // function saveContent() {
-        //     saveNote(function(data) {
-        //         var successTip = chrome.i18n.getMessage('SaveNoteSuccess'),
-        //             viewURL = option.baseUrl + '/note/previewfull/' + data.Note.NoteID,
-        //             viewTxt = chrome.i18n.getMessage('ViewText');
-        //         option.notifyHTML(successTip + '<a href="' + viewURL + '" target="_blank" id="closebtn">' + viewTxt + '</a>', 10000);
-        //     }, function() {
-        //         //笔记正文保存失败
-        //         //todo...
-        //         //self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
-        //     })
-        // }
     }
-
     MkSyncNode.prototype.delete = function() {
-        var noteid = this.note.noteid;
+        var self = this,
+            noteid = self.note.noteid;
+        showTips('noteDelete')
         $.ajax({
             url: self.baseUrl + "/note/delete",
             type: "POST",
             data: 'noteIds=' + noteid,
             success: function(data) {
                 if(data.error) {
+                    showTips('noteDeleteFail');
+                    self.syncState.setState('note.delete.fail')
                     return;
                 }
-                successCallback(data)
+                successCallback(data);
+                self.syncState.setState('note.delete.success')
             },
-            error: function(jqXHR, textStatus, errorThrown) {
-                /**
-                 * 提示笔记删除失败
-                 */
-                // removeFiles();
-                // self.notifyHTML(chrome.i18n.getMessage('UploadImagesFailed'));
+            error: function() {
+                showTips('noteDeleteFail');
+                self.syncState.setState('note.delete.fail')
             }
         });
     }
@@ -1323,28 +1295,35 @@
             option = self.option,
             images = self.images,
             note = self.note;
-        var imgs = note.content.find('img'),
+        var imgs = $(note.notecontent).find('img'),
             filteredImg = [];
         if(this.option.isAutoImage) {
             for(var i = 0; i < imgs.length; i++) {
                 var img = img[i];
                 if(img.src in filteredImg) continue;
 
-                filteredImg.images.push({
-                    img.src: 1
-                })
+                var obj = {};
+                obj[img.src] = 1;
+                filteredImg.images.push(obj);
                 self.images.push(new MkSyncImage(img));
             }
         }
         if(self.images.length) {
+            showTips('uploadImages');
             var syncImages = new MkSyncImages(note, images, option);
             syncImages.upload(function() {
-
+                showTips('uploadImagesSuccess');
+                self.syncState.setState('save.images.success', arguments)
+            }, function() {
+                showTips('uploadImagesFail');
+                self.syncState.setState('save.images.fail', arguments)
             })
         } else {
-
+            //不需要保存图片只要将状态设置为图片已经完成上传，继续后续事件
+            self.syncState.setState('upload.images.success')
         }
     }
+
     var MkSyncImage = function(imgEl) {
             this.image = imgEl;
         }
@@ -1385,9 +1364,8 @@
             this.images = syncImageAry;
             this.note = note;
             this.option = option || {};
-
         }
-    MkSyncImages.prototype.upload = function(callback) {
+    MkSyncImages.prototype.upload = function(successCallback, failCallback) {
         /**
          * 判断是否登陆
          * todo...
@@ -1414,7 +1392,7 @@
                         (function(index, formDataItem) {
                             saveImage(formData, function(data) {
                                 if(index == formDataQueue.length - 1) {
-                                    callback(index, formDataItem, data);
+                                    successCallback(index, formDataItem, data);
                                 }
                             });
                         })(j, formData)
@@ -1473,7 +1451,7 @@
             return f;
         }
 
-        function saveImage(formData, successCallback) {
+        function saveImage(formData, successCallback, failCallback) {
             $.ajax({
                 url: self.baseUrl + "/attachment/savemany/",
                 type: "POST",
@@ -1490,7 +1468,8 @@
                     }
                     successCallback(data)
                 },
-                error: function(jqXHR, textStatus, errorThrown) {
+                error: function() {
+                    failCallback(arguments);
                     // console.log('xhr error: ')
                     // console.log(textStatus)
                     // removeFiles();
@@ -1502,37 +1481,46 @@
 
     var MkFileSystem = {};
     MkFileSystem.files = [];
-    MkFileSystem.create(function(size, fileName, blob, callback, errorFn) {
+    MkFileSystem.removeFiles = function() {
+        var errorFn = MkFileSystem.onFileError;
+        for(var idx in files) {
+            var file = files[idx],
+                fileSize = file.size,
+                fileName = file.name;
+            window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
+                fs.root.getFile(fileName, {}, function(fileEntry) {
+                    fileEntry.remove(function() {
+                        console.log('File ' + fileName + ' removed.');
+                    }, errorFn);
+                }, errorFn);
+            }, errorFn);
+        }
+    }
+    MkFileSystem.onFileError = function(err) {
+        for(var p in FileError) {
+            if(FileError[p] == err.code) {
+                console.log('Error code: ' + err.code + 'Error info: ' + p);
+                break;
+            }
+        }
+    }
+    MkFileSystem.create = function(size, fileName, blob, callback, errorFn) {
+        var errorFn = MkFileSystem.onFileError;
         window.requestFileSystem(TEMPORARY, size, function(fs) {
             fs.root.getFile(fileName, {
                 create: true
             }, function(fileEntry) {
                 fileEntry.createWriter(function(fileWriter) {
                     fileWriter.onwrite = function(e) {
-                        fileEntry.file(file) {
+                        fileEntry.file(function(file) {
                             MkFileSystem.files.push(file)
                             callback(file);
-                        }
+                        })
                         fileWriter.write(blob);
                     }
-                }, function() {
-                    /**
-                     * 文件写入出错
-                     * to do...
-                     */
-                })
-            }, function() {
-                /**
-                 * 文件创建出错
-                 * to do...
-                 */
-            });
-        }, function() {
-            /**
-             * 文件写入出错
-             * to do...
-             */
-        });
-    });
+                }, errorFn)
+            }, errorFn);
+        }, errorFn);
+    };
 
 })(jQuery);

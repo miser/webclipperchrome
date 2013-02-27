@@ -162,5 +162,59 @@
    "NoArticleFromPage": {
       "description": "no aricle from page while auto extraction",
       "message": "\u9875\u9762\u6CA1\u6709\u6B63\u6587\u54E6\u256E\u0028\u256F\u005F\u2570\u0029\u256D\u5C1D\u8BD5\u4FDD\u5B58\u7F51\u9875\u5427"
+   },
+   "syncTaskAdd":{
+     "message": "{0} 被添加至同步列队" 
+   },
+   "syncTaskSuccess":{
+     "message": "{0} 同步成功" 
+   },
+   "syncTaskFail":{
+     "message": "{0} 同步失败，请重新尝试" 
+   },
+   "noteInit":{
+     "message": "{0} 正在被初始化" 
+   },
+   "noteInitSuccess":{
+     "message": "{0} 初始化完成" 
+   },
+   "noteInitFail":{
+     "message": "{0} 初始化失败" 
+   },
+   "saveImages":{
+     "message": "正在下载笔记图片" 
+   },
+   "saveImagesSuccess":{
+     "message": "笔记图片下载完成" 
+   },
+   "saveImagesFail":{
+     "message": "笔记图片下载失败" 
+   },
+   "uploadImages":{
+     "message": "正在提交笔记图片至麦库服务器中" 
+   },
+   "uploadImagesSuccess":{
+     "message": "笔记图片提交成功" 
+   },
+   "uploadImagesFail":{
+     "message": "笔记图片提交失败" 
+   },
+   "noteSaveContent":{
+     "message": "{0} 正在保存笔记正文" 
+   },
+   "noteSaveContentSuccess":{
+     "message": "{0} 笔记正文保存成功" 
+   },
+   "noteSaveContentFail":{
+     "message": "{0} 笔记正文保存失败" 
+   },
+   "noteDelete":{
+     "message": "{0} 正在被删除" 
+   },
+   "noteDeleteSuccess":{
+     "message":  "{0} 被删除成功" 
+   },
+   "noteDeleteFail":{
+     "message":  "{0} 被删除失败" 
    }
 }
