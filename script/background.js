@@ -461,7 +461,6 @@
                     tags: msg.tags,
                     categoryid: msg.categoryid
                 }
-                console.log(MKSyncTaskQueue)
                 MKSyncTaskQueue.add(new MKSyncTask(note, self))
                 MKSyncTaskQueue.start()
                 //     var defaultData = {
@@ -1080,7 +1079,7 @@
     function showTips(key) {
         if(!key) return;
         var tips = chrome.i18n.getMessage(key);
-        var ary = [].slice.call(arguments,1);
+        var ary = [].slice.call(arguments, 1);
         for(var i = 0; i < ary.length; i++) {
             if(ary[i] == undefined) continue;
             var reg = new RegExp('\\{' + i + '\\}', 'g')
@@ -1093,22 +1092,33 @@
             var queue = [],
                 currentTask;
 
+            function endCurrentTask() {
+                //检查当前的任务是否完成
+                if(!currentTask) {
+                    return true;
+                }
+                if(currentTask.processState == 'success') {
+                    showTips('syncTaskSuccess', currentTask.note.note.title);
+                    currentTask = null;
+                    return true;
+                } else if(currentTask.processState == 'fail') {
+                    showTips('syncTaskFail', currentTask.note.note.title);
+                    currentTask = null;
+                    return true;
+                } else {
+
+                    return false
+                }
+
+            }
+
             return {
                 add: function(task) {
                     showTips('syncTaskAdd', task.note.note.title)
                     queue.push(task)
                 },
                 start: function() {
-                    //检查当前的任务是否完成
-                    if(currentTask) {
-                        if(currnetTask.processState == 'success') {
-                            currentTask = null;
-                        } else if(currnetTask.processState == 'fail') {
-                            currnetTask = null;
-                        } else {
-                            return;
-                        }
-                    }
+                    if(!endCurrentTask()) return;
 
                     currentTask = queue.shift();
 
@@ -1122,7 +1132,7 @@
                     })
                 },
                 end: function() {
-                    currentTask = null;
+                    endCurrentTask();
                 }
             }
         }();
@@ -1130,7 +1140,7 @@
     var MKEvent = function() {};
     _.extend(MKEvent.prototype, Backbone.Events);
     MKEvent.prototype.setState = function() {
-        this.trigger('changeState', arguments[0], [].slice.call(arguments,1));
+        this.trigger('changeState', arguments[0], [].slice.call(arguments, 1));
     }
 
     var MKSyncTask = function(noteData, option) {
@@ -1158,33 +1168,28 @@
             } else if(state == 'note.init.success') {
                 note.saveImage();
             } else if(state == 'note.init.fail') {
-                self.processState = 'fail';
+                self.end('fail')
             } else if(state == 'upload.images.success') {
-
+                note.saveContent();
             } else if(state == 'upload.images.fail') {
                 self.delete();
-            } else if(state == 'note.saveContent') {
-
-            } else if(state == 'note.saveContent.success') {
-
-            } else if(state == 'note.saveContent.fail') {
-
-            } else if(state == 'note.delete') {
-
+            } else if(state == 'save.saveContent.success') {
+                self.end('success')
+            } else if(state == 'save.saveContent.fail') {
+                self.delete();
             } else if(state == 'note.delete.success') {
-                self.processState = 'fail';
+                self.end('fail');
             } else if(state == 'note.delete.fail') {
-                self.processState = 'fail';
+                self.end('fail');
             }
         })
         syncState.setState('note.init')
     }
-    MKSyncTask.prototype.success = function() {
-
+    MKSyncTask.prototype.end = function(state) {
+        this.processState = state;
+        MKSyncTaskQueue.end();
     }
-    MKSyncTask.prototype.fail = function() {
 
-    }
 
     var MkSyncNode = function(noteData, option, stateEvent) {
             var defaultData = {
@@ -1200,23 +1205,25 @@
             this.images = [];
             noteData = noteData || {};
             this.note = {};
-            $.extend(this.note, defaultData,noteData);
+            $.extend(this.note, defaultData, noteData);
             this.note.notecontent = $('<div></div>').append(this.note.notecontent).html();
             if(!stateEvent) {
                 this.syncState = {};
                 this.syncState.setState = function() {};
-            }
-            else{
+            } else {
                 this.syncState = stateEvent;
             }
         }
 
     MkSyncNode.prototype.init = function() {
         var self = this,
-            option = self.option;
+            option = self.option,
+            content = self.note.notecontent;
+        self.note.notecontent = '';
         showTips('noteInit', self.note.title);
-        self.saveNote(function(data) {
+        self.post(function(data) {
             self.note.noteid = data.Note.NoteID;
+            self.note.notecontent = content;
             showTips('noteInitSuccess', self.note.title);
             self.syncState.setState('note.init.success', arguments)
         }, function() {
@@ -1231,14 +1238,13 @@
     }
     MkSyncNode.prototype.saveContent = function() {
         var self = this;
-        self.saveNote(function(data) {
-            self.note.noteid = data.Note.NoteID;
+        self.post(function(data) {
             self.syncState.setState('save.saveContent.success', arguments)
         }, function() {
             syncState.setState('save.saveContent.fail', arguments)
         })
     }
-    MkSyncNode.prototype.saveNote = function(successCallback, failCallback) {
+    MkSyncNode.prototype.post = function(successCallback, failCallback) {
         var self = this,
             option = self.option,
             images = self.images,
