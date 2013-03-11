@@ -172,8 +172,11 @@
    "syncTaskFail":{
      "message": "{0} 同步失败，请重新尝试" 
    },
+   "nextTask":{
+      "message":"正在准备下条同步笔记 {0}"
+      },
    "noteInit":{
-     "message": "{0} 正在被初始化" 
+     "message": "{0} 正在被初始化..." 
    },
    "noteInitSuccess":{
      "message": "{0} 初始化完成" 
@@ -182,7 +185,7 @@
      "message": "{0} 初始化失败" 
    },
    "saveImages":{
-     "message": "正在下载笔记图片" 
+     "message": "正在下载笔记图片..." 
    },
    "saveImagesSuccess":{
      "message": "笔记图片下载完成" 
@@ -191,7 +194,7 @@
      "message": "笔记图片下载失败" 
    },
    "uploadImages":{
-     "message": "正在提交笔记图片至麦库服务器中" 
+     "message": "正在提交笔记图片至麦库服务器中..." 
    },
    "uploadImagesSuccess":{
      "message": "笔记图片提交成功" 
@@ -200,7 +203,7 @@
      "message": "笔记图片提交失败" 
    },
    "noteSaveContent":{
-     "message": "{0} 正在保存笔记正文" 
+     "message": "{0} 正在保存笔记正文..." 
    },
    "noteSaveContentSuccess":{
      "message": "{0} 笔记正文保存成功" 

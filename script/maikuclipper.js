@@ -401,7 +401,7 @@
                         extractedContent = extractedContent.parentNode;
                     }
                     setTimeout(function() {
-                        var title = document.title && document.title.split('-')[0];
+                        var title = document.title;//&& document.title.split('-')[0];
                         self.addMark($(extractedContent), self.mark.clone(), title.trim());
                     }, 0);
                 } else {
