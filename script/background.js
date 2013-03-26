@@ -1288,13 +1288,14 @@
             option = self.option,
             noteid = self.note.noteid;
         NotifyTips.showPersistent('noteDelete', self.note.title);
+
         $.ajax({
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             },
             url: option.baseUrl + "/note/delete",
             type: "POST",
-            data: 'noteIds=' + noteid,
+            data: '{"noteIds":"' + noteid + '"}',
             success: function(data) {
                 if (data.error) {
                     NotifyTips.showPersistent('noteDeleteFail', self.note.title);
