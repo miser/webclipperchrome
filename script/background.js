@@ -1086,13 +1086,12 @@
                 return true;
             }
             if (currentTask.processState == 'success') {
-                if(queue.length > 0){
-                    NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title,function(){
-                        NotifyTips.showPersistent('nextTask',queue[0].note.note.title);
+                if (queue.length > 0) {
+                    NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
+                        NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
                     });
-                }
-                else{
-                    NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title,function(){
+                } else {
+                    NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
                         NotifyTips.clear();
                     });
                 }
@@ -1147,6 +1146,7 @@
         this.note = new MkSyncNode(noteData, option, this.state);
         this.option = option;
         this.processState = '';
+        this.errorCount = 0; //任务出错次数
     }
     MKSyncTask.prototype.sync = function(callback) {
         var self = this,
@@ -1171,12 +1171,12 @@
             } else if (state == 'save.images.success') {
                 note.saveContent();
             } else if (state == 'save.images.fail') {
-                self.delete();
+                note.delete();
             } else if (state == 'save.saveContent.success') {
                 self.end('success');
                 callback && callback()
             } else if (state == 'save.saveContent.fail') {
-                self.delete();
+                note.delete();
             } else if (state == 'note.delete.success') {
                 self.end('fail');
             } else if (state == 'note.delete.fail') {
@@ -1187,6 +1187,7 @@
     }
     MKSyncTask.prototype.end = function(state) {
         this.processState = state;
+        MkFileSystem.removeFiles(); //将存储的数据图片删除
         MKSyncTaskQueue.end();
     }
 
@@ -1196,9 +1197,8 @@
     MKSyncErrorTask.prototype.showTips = function() {
         // showTips('syncTaskFail', currentTask.note.note.title);
     }
-    MKSyncErrorTask.prototype.restart = function() {
+    MKSyncErrorTask.prototype.restart = function() {}
 
-    }
 
     var MkSyncNode = function(noteData, option, stateEvent) {
         var defaultData = {
@@ -1285,26 +1285,27 @@
     }
     MkSyncNode.prototype.delete = function() {
         var self = this,
+            option = self.option,
             noteid = self.note.noteid;
-        NotifyTips.showPersistent('noteDelete');
+        NotifyTips.showPersistent('noteDelete', self.note.title);
         $.ajax({
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            url: self.baseUrl + "/note/delete",
+            url: option.baseUrl + "/note/delete",
             type: "POST",
             data: 'noteIds=' + noteid,
             success: function(data) {
                 if (data.error) {
-                    NotifyTips.showPersistent('noteDeleteFail');
+                    NotifyTips.showPersistent('noteDeleteFail', self.note.title);
                     self.syncState.setState('note.delete.fail')
                     return;
                 }
                 successCallback(data);
-                self.syncState.setState('note.delete.success')
+                self.syncState.setState('note.delete.success', self.note.title)
             },
             error: function() {
-                NotifyTips.showPersistent('noteDeleteFail');
+                NotifyTips.showPersistent('noteDeleteFail', self.note.title);
                 self.syncState.setState('note.delete.fail')
             }
         });
@@ -1364,7 +1365,7 @@
     var MkSyncImage = function(imgEl) {
         this.image = imgEl;
     }
-    MkSyncImage.prototype.download = function(callback, errorFn) {
+    MkSyncImage.prototype.download = function(callback, errorFn, error404) {
         var self = this,
             image = self.image,
             url = image.src,
@@ -1381,19 +1382,19 @@
                     fileName = parts[parts.length - 1];
                 MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
                     callback(self, file)
-                }, function() {
-                    errorFn(self, arguments)
-                    //todo... 失败
-                })
+                }) //MKFileSystem.create todo...
+            } else if (this.status == 404) {
+                errorFn && errorFn(self, arguments);
+            } else {
+                // error404 && error404(self, arguments)
+                error404(self)
             }
         }
         xhr.onerror = function() {
             console.log('retrieve remote image xhr onerror')
-            // errorCallback && errorCallback(imgIndex);
         }
         xhr.onabort = function() {
             console.log('retrieve remote image xhr onabort')
-            // errorCallback && errorCallback(imgIndex);
         }
         xhr.send(null);
     }
@@ -1414,41 +1415,72 @@
             option = self.option,
             downloadState = {
                 success: 'download-success',
-                error: 'download-error'
+                error: 'download-error',
+                error404: 'download-404'
+            },
+            errorBreak = false,
+            completedImageState = {
+                waitting: 'waitting',
+                error: 'error'
             }
 
 
+            /**
+             * 图片请求是否成功都需要uploadPackDataForm做整体判断，
+             * 好处：统一处理，防止已完成的图片的 requestFileSystem 或被删除。失败的请求比起成功的少很多，也这样做也减轻了逻辑出错
+             * 坏处：图片请求出错不能立即通知程序，会有延迟。
+             */
+
         for (var i = 0; i < images.length; i++) {
+            if (errorBreak) break;
             images[i].download(function(img, file) {
                 img.file = file;
                 img.state = downloadState.success;
-                var imagesCompletedAry = getCompletedAry();
-                if (imagesCompletedAry) {
-                    var queueObj = packDataForm(imagesCompletedAry),
-                        formDataQueue = queueObj.formDataQueue,
-                        imagesQueue = queueObj.imagesQueue,
-                        uploadCompletedCount = 0,
-                        uploadCompletedData = [],
-                        imagesNewQueue = [];
-                    for (var j = 0; j < formDataQueue.length; j++) {
-                        var formData = formDataQueue[j],
-                            imgItems = imagesQueue[j];
-                        (function(formData, imgItems) {
-                            saveImage(formData, function(data) {
-                                uploadCompletedCount++;
-                                uploadCompletedData.push(data);
-                                //根据upload的图片从新排序原始img标签数据顺序
-                                imagesNewQueue.push(imgItems);
-                                if (uploadCompletedCount == formDataQueue.length) {
-                                    successCallback(imagesNewQueue, uploadCompletedData);
-                                }
-                            });
-                        })(formData, imgItems)
-                    }
-                }
+                uploadPackDataForm();
             }, function(img) {
                 img.state = downloadState.error;
+                errorBreak = true;
+                uploadPackDataForm();
+            }, function(img) {
+                img.state = downloadState.error404;
+                uploadPackDataForm();
             })
+        }
+
+        function uploadPackDataForm(imagesCompletedAry) {
+            var imagesCompletedAry = getCompletedAry();
+            if (imagesCompletedAry == completedImageState.error) {
+                failCallback && failCallback();
+                return;
+            }
+            if (imagesCompletedAry instanceof Array) {
+                console.log('array')
+                var queueObj = packDataForm(imagesCompletedAry),
+                    formDataQueue = queueObj.formDataQueue,
+                    imagesQueue = queueObj.imagesQueue,
+                    uploadCompletedCount = 0,
+                    uploadCompletedData = [],
+                    imagesNewQueue = [];
+                if (formDataQueue.length == 0) {
+                    successCallback(imagesNewQueue, uploadCompletedData);
+                    return;
+                }
+                for (var j = 0; j < formDataQueue.length; j++) {
+                    var formData = formDataQueue[j],
+                        imgItems = imagesQueue[j];
+                    (function(formData, imgItems) {
+                        saveImage(formData, function(data) {
+                            uploadCompletedCount++;
+                            uploadCompletedData.push(data);
+                            //根据upload的图片从新排序原始img标签数据顺序
+                            imagesNewQueue.push(imgItems);
+                            if (uploadCompletedCount == formDataQueue.length) {
+                                successCallback(imagesNewQueue, uploadCompletedData);
+                            }
+                        });
+                    })(formData, imgItems)
+                }
+            }
         }
 
         function packDataForm(packImages) {
@@ -1478,6 +1510,7 @@
 
         function getCompletedAry() {
             var successCount = 0,
+                error404Count = 0,
                 errorCount = 0,
                 completedAry = [];
             for (var i = 0; i < images.length; i++) {
@@ -1485,17 +1518,19 @@
                 if (image.state == downloadState.success) {
                     successCount++;
                     completedAry.push(image);
+                } else if (image.state == downloadState.error404) {
+                    error404Count++;
                 } else if (image.state == downloadState.error) {
                     errorCount++;
-                } else {
-                    return;
                 }
             }
-            if (errorCount == images.length) {
-                failCallback && failCallback();
-                return;
+            if ((successCount + error404Count) == images.length) {
+                return completedAry;
+            } else if (errorCount > 0 && (successCount + error404Count + errorCount) == images.length) {
+                return completedImageState.error;
+            } else {
+                return completedImageState.waitting;
             }
-            return completedAry;
         }
 
         function createFormData() {
@@ -1531,7 +1566,7 @@
     MkFileSystem.files = [];
     MkFileSystem.removeFiles = function() {
         var errorFn = MkFileSystem.onFileError;
-        for (var idx in files) {
+        for (var idx in MkFileSystem.files) {
             var file = files[idx],
                 fileSize = file.size,
                 fileName = file.name;
@@ -1607,6 +1642,7 @@
             } else {
                 NotifyTips.create();
             }
+            console.log(persistentTips)
             if (!isPersistent) {
                 notificationTimer = setTimeout(function() {
                     callback && callback();
@@ -1625,7 +1661,7 @@
 
         var getContent = function() {
             var arg = arguments;
-            while(typeof arg[0] == 'object'){
+            while (typeof arg[0] == 'object') {
                 arg = arg[0];
             }
             if (!arg && arg.length <= 0) return;
@@ -1649,7 +1685,7 @@
                 showTips(persistentTips, '', true);
             },
             showTemporary: function() {
-                if(!notification){
+                if (!notification) {
                     NotifyTips.showPersistent(arguments);
                     return;
                 }
@@ -1662,7 +1698,7 @@
                 notificationTimer = null,
                 callback = null;
             },
-            create:function(){
+            create: function() {
                 notification = webkitNotifications.createHTMLNotification('notification.html');
                 notification.addEventListener('close', function(e) {
                     notification = null;
