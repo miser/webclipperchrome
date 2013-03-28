@@ -219,5 +219,11 @@
    },
    "noteDeleteFail":{
      "message":  "{0} 被删除失败" 
+   },
+   "noteRepeatSave":{
+     "message":  "{0} 笔记上传出错，正在重新上传" 
+   },
+   "noteErrorTemplate":{
+      "message":  "<li>{0} 剪辑出错，是否需要 <a href='javascript:void(0)' class='repeat-btn' data-guid='{1}'>重试</a>  <a href='javascript:void(0)' class='cancel-btn' data-guid='{1}'>放弃</a></li>"  
    }
 }

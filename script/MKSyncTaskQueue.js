@@ -1,0 +1,104 @@
+var MKSyncTaskQueue = function() {
+	var queue = [],
+		currentTask,
+		errorQueue = [],
+		nextTaskTimer;
+
+	var errorContentTemplate = chrome.i18n.getMessage('noteErrorTemplate');
+
+	function endCurrentTask() {
+		//检查当前的任务是否完成
+		if (!currentTask) {
+			console.log('endCurrentTask:' + true)
+			return true;
+		}
+		if (currentTask.processState == 'success') {
+			if (queue.length > 0) {
+				NotifyTips.showPersistent('syncTaskSuccess', currentTask.note.note.title, function() {
+					NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
+				});
+			} else {
+				NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
+					console.log('clear')
+					NotifyTips.clear();
+				});
+			}
+			currentTask = null;
+			console.log('endCurrentTask:' + true)
+			return true;
+		} else if (currentTask.processState == 'fail') {
+			if (++currentTask.errorCount >= 3) {
+				MKSyncTaskQueue.addError(currentTask);
+				currentTask = null;
+				if (queue.length > 0) {
+					NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
+				}
+				else{
+					NotifyTips.showError()
+				}
+				console.log('endCurrentTask:' + true)
+				return true;
+			} else {
+				currentTask.repeat(function() {
+					clearTimeout(nextTaskTimer)
+					nextTaskTimer = setTimeout(function() {
+						MKSyncTaskQueue.start();
+					}, 1000 * 5)
+				});
+				console.log('endCurrentTask:' + false)
+				return false;
+			}
+		} else {
+			console.log('endCurrentTask:' + false)
+			return false;
+		}
+		console.log('endCurrentTask: null')
+	}
+
+	return {
+		add: function(task) {
+			NotifyTips.showTemporary('syncTaskAdd', task.note.note.title);
+			queue.push(task)
+		},
+		start: function() {
+			if (!endCurrentTask()) return;
+
+			currentTask = queue.shift();
+			console.log(currentTask)
+			if (!currentTask) return;
+
+			//每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
+			currentTask.sync(function() {
+				clearTimeout(nextTaskTimer)
+				nextTaskTimer = setTimeout(function() {
+					MKSyncTaskQueue.start();
+				}, 1000 * 5)
+			})
+		},
+		end: function() {
+			if(endCurrentTask()){
+				MKSyncTaskQueue.start();
+			}
+		},
+		addError: function(task) {
+			errorQueue.push(task);
+		},
+		getErrorContentHTML: function() {
+			var html = '';
+			for (var index in errorQueue) {
+				var note = errorQueue[index].note
+				html += errorContentTemplate.replaceTemplate(note.title)
+			}
+			if (html != '') {
+				html = "<ul class='error-tips'>" + html + "</ul>";
+			}
+			return html;
+		},
+		clear: function() {
+			queue = [];
+		},
+		clearError: function() {
+			errorQueue = [];
+		}
+	}
+}();

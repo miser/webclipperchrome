@@ -1076,120 +1076,153 @@
         maikuNote.init();
     });
 
-    var MKSyncTaskQueue = function() {
-        var queue = [],
-            currentTask;
 
-        function endCurrentTask() {
-            //检查当前的任务是否完成
-            if (!currentTask) {
-                return true;
-            }
-            if (currentTask.processState == 'success') {
-                if (queue.length > 0) {
-                    NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
-                        NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
-                    });
-                } else {
-                    NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
-                        NotifyTips.clear();
-                    });
-                }
-                currentTask = null;
-                return true;
-            } else if (currentTask.processState == 'fail') {
-                /*
-                 * 失败了需要提醒别人重试
-                 */
-                NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title);
-                currentTask = null;
-                return true;
-            } else {
-                return false
-            }
-        }
+    // String.prototype.replaceTemplate = function(ary){
+    //     if(!ary) return this;
 
-        return {
-            add: function(task) {
-                NotifyTips.showTemporary('syncTaskAdd', task.note.note.title);
-                queue.push(task)
-            },
-            start: function() {
-                if (!endCurrentTask()) return;
+    //     var str = this;
+    //     if(!(ary instanceof Array)){
+    //         ary = [ary];
+    //     }
 
-                currentTask = queue.shift();
+    //     for (var i = 0; i < ary.length; i++) {
+    //         var content = ary[i];
+    //         if (content == undefined) continue;
 
-                if (!currentTask) return;
+    //         var reg = new RegExp('\\{' + i + '\\}', 'g')
+    //         str = str.replace(reg, ary[i]);
+    //     }
+    //     return str;
+    // }
 
-                var slef = this;
-                //每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
-                currentTask.sync(function() {
-                    setTimeout(function() {
-                        slef.start();
-                    }, 1000 * 5)
-                })
-            },
-            end: function() {
-                endCurrentTask();
-            }
-        }
-    }();
+    // var MKSyncTaskQueue = function() {
+    //     var queue = [],
+    //         currentTask,
+    //         errorQueue = [];
 
-    var MKEvent = function() {};
-    _.extend(MKEvent.prototype, Backbone.Events);
-    MKEvent.prototype.setState = function() {
-        this.trigger('changeState', arguments[0], [].slice.call(arguments, 1));
-    }
+    //     var errorContentTemplate = "{0} 剪辑出错，是否需要 <a href='javascript:void(0)'>重试</a>  <a href='javascript:void(0)'>放弃</a>";
 
-    var MKSyncTask = function(noteData, option) {
-        this.state = new MKEvent();
-        this.note = new MkSyncNode(noteData, option, this.state);
-        this.option = option;
-        this.processState = '';
-        this.errorCount = 0; //任务出错次数
-    }
-    MKSyncTask.prototype.sync = function(callback) {
-        var self = this,
-            note = self.note,
-            syncState = this.state;
+    //     function endCurrentTask() {
+    //         //检查当前的任务是否完成
+    //         if (!currentTask) {
+    //             return true;
+    //         }
+    //         if (currentTask.processState == 'success') {
+    //             if (queue.length > 0) {
+    //                 NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
+    //                     NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
+    //                 });
+    //             } else {
+    //                 NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
+    //                     console.log('task clear');
+    //                     NotifyTips.clear();
+    //                 });
+    //             }
+    //             currentTask = null;
+    //             return true;
+    //         } else if (currentTask.processState == 'fail') {
+    //             console.log('currentTask.processState')
+    //             /*
+    //              * 失败了需要提醒别人重试
+    //              */
+    //             NotifyTips.showTemporary('syncTaskFail', currentTask.note.note.title);
+    //             currentTask = null;
+    //             return true;
+    //         } else {
+    //             return false
+    //         }
+    //     }
 
-        /**
-         * MKSyncTask的sync来组织具体的同步逻辑
-         * 任务的同步方法决定同步完成后的回调
-         * 如果每次处理的回调不同，可以继承扩展当前的MKSyncTask
-         * 让每个MkSyncNode对象继承Backbone.Events
-         */
+    //     return {
+    //         add: function(task) {
+    //             NotifyTips.showTemporary('syncTaskAdd', task.note.note.title);
+    //             queue.push(task)
+    //         },
+    //         start: function() {
+    //             if (!endCurrentTask()) return;
 
-        syncState.on('changeState', function(state, data) {
-            if (state == 'note.init') {
-                //笔记正在初始化
-                note.init();
-            } else if (state == 'note.init.success') {
-                note.saveImage();
-            } else if (state == 'note.init.fail') {
-                self.end('fail')
-            } else if (state == 'save.images.success') {
-                note.saveContent();
-            } else if (state == 'save.images.fail') {
-                note.delete();
-            } else if (state == 'save.saveContent.success') {
-                self.end('success');
-                callback && callback()
-            } else if (state == 'save.saveContent.fail') {
-                note.delete();
-            } else if (state == 'note.delete.success') {
-                self.end('fail');
-            } else if (state == 'note.delete.fail') {
-                self.end('fail');
-            }
-        })
-        syncState.setState('note.init')
-    }
-    MKSyncTask.prototype.end = function(state) {
-        this.processState = state;
-        MkFileSystem.removeFiles(); //将存储的数据图片删除
-        MKSyncTaskQueue.end();
-    }
+    //             currentTask = queue.shift();
+
+    //             if (!currentTask) return;
+
+    //             var slef = this;
+    //             //每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
+    //             currentTask.sync(function() {
+    //                 setTimeout(function() {
+    //                     slef.start();
+    //                 }, 1000 * 5)
+    //             })
+    //         },
+    //         end: function() {
+    //             endCurrentTask();
+    //         },
+    //         addError: function(task) {
+    //             errorQueue.push(task);
+    //         },
+    //         getErrorContentHTML: function() {
+    //             var html = '';
+    //             for(var task in errorQueue){
+                    
+    //             }
+    //         }
+    //     }
+    // }();
+
+    // var MKEvent = function() {};
+    // _.extend(MKEvent.prototype, Backbone.Events);
+    // MKEvent.prototype.setState = function() {
+    //     this.trigger('changeState', arguments[0], [].slice.call(arguments, 1));
+    // }
+
+    // var MKSyncTask = function(noteData, option) {
+    //     this.state = new MKEvent();
+    //     this.note = new MkSyncNode(noteData, option, this.state);
+    //     this.option = option;
+    //     this.processState = '';
+    //     this.errorCount = 0; //任务出错次数
+    // }
+    // MKSyncTask.prototype.sync = function(callback) {
+    //     var self = this,
+    //         note = self.note,
+    //         syncState = this.state;
+
+    //     /**
+    //      * MKSyncTask的sync来组织具体的同步逻辑
+    //      * 任务的同步方法决定同步完成后的回调
+    //      * 如果每次处理的回调不同，可以继承扩展当前的MKSyncTask
+    //      * 让每个MkSyncNode对象继承Backbone.Events
+    //      */
+
+    //     syncState.on('changeState', function(state, data) {
+    //         if (state == 'note.init') {
+    //             //笔记正在初始化
+    //             note.init();
+    //         } else if (state == 'note.init.success') {
+    //             note.saveImage();
+    //         } else if (state == 'note.init.fail') {
+    //             self.end('fail')
+    //         } else if (state == 'save.images.success') {
+    //             note.saveContent();
+    //         } else if (state == 'save.images.fail') {
+    //             note.delete();
+    //         } else if (state == 'save.saveContent.success') {
+    //             self.end('success');
+    //             callback && callback()
+    //         } else if (state == 'save.saveContent.fail') {
+    //             note.delete();
+    //         } else if (state == 'note.delete.success') {
+    //             self.end('fail');
+    //         } else if (state == 'note.delete.fail') {
+    //             self.end('fail');
+    //         }
+    //     })
+    //     syncState.setState('note.init')
+    // }
+    // MKSyncTask.prototype.end = function(state) {
+    //     this.processState = state;
+    //     MkFileSystem.removeFiles(); //将存储的数据图片删除
+    //     MKSyncTaskQueue.end();
+    // }
 
     var MKSyncErrorTask = function(task) {
 
@@ -1200,514 +1233,511 @@
     MKSyncErrorTask.prototype.restart = function() {}
 
 
-    var MkSyncNode = function(noteData, option, stateEvent) {
-        var defaultData = {
-            title: '[未命名笔记]',
-            sourceurl: '',
-            notecontent: '',
-            tags: '',
-            categoryid: '',
-            noteid: '',
-            importance: 0
-        };
-        this.option = option || {};
-        this.images = [];
-        noteData = noteData || {};
-        this.note = {};
-        $.extend(this.note, defaultData, noteData);
-        this.noteEl = $('<div></div>').append(this.note.notecontent);
-        this.note.notecontent = ''; //this.noteEl.html();
-        if (!stateEvent) {
-            this.syncState = {};
-            this.syncState.setState = function() {};
-        } else {
-            this.syncState = stateEvent;
-        }
-    }
-    MkSyncNode.prototype.init = function() {
-        var self = this,
-            option = self.option,
-            content = self.note.notecontent;
-        self.note.notecontent = '';
-        NotifyTips.showPersistent('noteInit', self.note.title);
-        self.post(function(data) {
-            self.note.noteid = data.Note.NoteID;
-            self.note.notecontent = content;
-            NotifyTips.showPersistent('noteInitSuccess', self.note.title);
-            self.syncState.setState('note.init.success', arguments)
-        }, function() {
-            NotifyTips.showPersistent('noteInitFail', self.note.title);
-            self.syncState.setState('note.init.fail', arguments)
-        })
-    }
-    MkSyncNode.prototype.saveImage = function() {
-        var self = this;
-        NotifyTips.showPersistent('saveImages', self.note.title);
-        self.saveImages();
-    }
-    MkSyncNode.prototype.saveContent = function() {
-        var self = this;
-        self.note.notecontent = self.noteEl.html();
-        self.post(function(data) {
-            self.syncState.setState('save.saveContent.success', arguments);
-        }, function() {
-            self.syncState.setState('save.saveContent.fail', arguments)
-        })
-    }
-    MkSyncNode.prototype.post = function(successCallback, failCallback) {
-        var self = this,
-            option = self.option,
-            images = self.images,
-            note = self.note;
-        $.ajax({
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            type: 'POST',
-            url: option.baseUrl + '/note/save',
-            data: JSON.stringify(note),
-            success: function(data) {
-                if (data.error) {
-                    if (data.error == 'notlogin') {
-                        NotifyTips.showPersistent('syncTaskAdd');
-                    } else {
-                        NotifyTips.showPersistent('SaveNoteFailed');
-                    }
-                    failCallback && failCallback();
-                    return;
-                }
-                successCallback && successCallback(data);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                failCallback && failCallback();
-            }
-        });
-    }
-    MkSyncNode.prototype.delete = function() {
-        var self = this,
-            option = self.option,
-            noteid = self.note.noteid;
-        NotifyTips.showPersistent('noteDelete', self.note.title);
+    // var MkSyncNode = function(noteData, option, stateEvent) {
+    //     var defaultData = {
+    //         title: '[未命名笔记]',
+    //         sourceurl: '',
+    //         notecontent: '',
+    //         tags: '',
+    //         categoryid: '',
+    //         noteid: '',
+    //         importance: 0
+    //     };
+    //     this.option = option || {};
+    //     this.images = [];
+    //     noteData = noteData || {};
+    //     this.note = {};
+    //     $.extend(this.note, defaultData, noteData);
+    //     this.noteEl = $('<div></div>').append(this.note.notecontent);
+    //     this.note.notecontent = ''; //this.noteEl.html();
+    //     if (!stateEvent) {
+    //         this.syncState = {};
+    //         this.syncState.setState = function() {};
+    //     } else {
+    //         this.syncState = stateEvent;
+    //     }
+    // }
+    // MkSyncNode.prototype.init = function() {
+    //     var self = this,
+    //         option = self.option,
+    //         content = self.note.notecontent;
+    //     self.note.notecontent = '';
+    //     NotifyTips.showPersistent('noteInit', self.note.title);
+    //     self.post(function(data) {
+    //         self.note.noteid = data.Note.NoteID;
+    //         self.note.notecontent = content;
+    //         NotifyTips.showPersistent('noteInitSuccess', self.note.title);
+    //         self.syncState.setState('note.init.success', arguments)
+    //     }, function() {
+    //         NotifyTips.showPersistent('noteInitFail', self.note.title);
+    //         self.syncState.setState('note.init.fail', arguments)
+    //     })
+    // }
+    // MkSyncNode.prototype.saveImage = function() {
+    //     var self = this;
+    //     NotifyTips.showPersistent('saveImages', self.note.title);
+    //     self.saveImages();
+    // }
+    // MkSyncNode.prototype.saveContent = function() {
+    //     var self = this;
+    //     self.note.notecontent = self.noteEl.html();
+    //     self.post(function(data) {
+    //         self.syncState.setState('save.saveContent.success', arguments);
+    //     }, function() {
+    //         self.syncState.setState('save.saveContent.fail', arguments)
+    //     })
+    // }
+    // MkSyncNode.prototype.post = function(successCallback, failCallback) {
+    //     var self = this,
+    //         option = self.option,
+    //         images = self.images,
+    //         note = self.note;
+    //     $.ajax({
+    //         headers: {
+    //             'X-Requested-With': 'XMLHttpRequest'
+    //         },
+    //         type: 'POST',
+    //         url: option.baseUrl + '/note/save',
+    //         data: JSON.stringify(note),
+    //         success: function(data) {
+    //             if (data.error) {
+    //                 if (data.error == 'notlogin') {
+    //                     NotifyTips.showPersistent('syncTaskAdd');
+    //                 } else {
+    //                     NotifyTips.showPersistent('SaveNoteFailed');
+    //                 }
+    //                 failCallback && failCallback();
+    //                 return;
+    //             }
+    //             successCallback && successCallback(data);
+    //         },
+    //         error: function(jqXHR, textStatus, errorThrown) {
+    //             failCallback && failCallback();
+    //         }
+    //     });
+    // }
+    // MkSyncNode.prototype.delete = function() {
+    //     var self = this,
+    //         option = self.option,
+    //         noteid = self.note.noteid;
+    //     NotifyTips.showPersistent('noteDelete', self.note.title);
 
-        $.ajax({
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            url: option.baseUrl + "/note/delete",
-            type: "POST",
-            data: '{"noteIds":"' + noteid + '"}',
-            success: function(data) {
-                if (data.error) {
-                    NotifyTips.showPersistent('noteDeleteFail', self.note.title);
-                    self.syncState.setState('note.delete.fail')
-                    return;
-                }
-                successCallback(data);
-                self.syncState.setState('note.delete.success', self.note.title)
-            },
-            error: function() {
-                NotifyTips.showPersistent('noteDeleteFail', self.note.title);
-                self.syncState.setState('note.delete.fail')
-            }
-        });
-    }
-    MkSyncNode.prototype.saveImages = function() {
-        var self = this,
-            option = self.option,
-            note = self.note;
-        var imgs = $(self.noteEl).find('img'),
-            filteredImg = [];
-        //maikuNoteOptions.serializeImg 要修改 改成传入参数而不是全局的
-        if (maikuNoteOptions.serializeImg) {
-            for (var i = 0; i < imgs.length; i++) {
-                var img = imgs[i];
-                if (img.src in filteredImg) continue;
+    //     $.ajax({
+    //         headers: {
+    //             'X-Requested-With': 'XMLHttpRequest'
+    //         },
+    //         url: option.baseUrl + "/note/delete",
+    //         type: "POST",
+    //         data: '{"noteIds":"' + noteid + '"}',
+    //         success: function(data) {
+    //             self.syncState.setState('note.delete.success', self.note.title)
+    //         },
+    //         error: function() {
+    //             NotifyTips.showPersistent('noteDeleteFail', self.note.title);
+    //             self.syncState.setState('note.delete.fail')
+    //         }
+    //     });
+    // }
+    // MkSyncNode.prototype.saveImages = function() {
+    //     var self = this,
+    //         option = self.option,
+    //         note = self.note;
+    //     var imgs = $(self.noteEl).find('img'),
+    //         filteredImg = [];
+    //     //maikuNoteOptions.serializeImg 要修改 改成传入参数而不是全局的
+    //     if (maikuNoteOptions.serializeImg) {
+    //         for (var i = 0; i < imgs.length; i++) {
+    //             var img = imgs[i];
+    //             if (img.src in filteredImg) continue;
 
-                var obj = {};
-                obj[img.src] = 1;
-                filteredImg.push(obj);
-                self.images.push(new MkSyncImage(img));
-            }
-        }
-        if (self.images.length) {
-            NotifyTips.showPersistent('uploadImages');
-            var syncImages = new MkSyncImages(note, self.images, option);
-            syncImages.upload(function(htmlImages, serverImages) {
-                if (serverImages.length != htmlImages.length) {
-                    NotifyTips.showPersistent('uploadImagesFail');
-                    self.syncState.setState('save.images.fail', arguments)
-                    return;
-                }
+    //             var obj = {};
+    //             obj[img.src] = 1;
+    //             filteredImg.push(obj);
+    //             self.images.push(new MkSyncImage(img));
+    //         }
+    //     }
+    //     if (self.images.length) {
+    //         NotifyTips.showPersistent('uploadImages');
+    //         var syncImages = new MkSyncImages(note, self.images, option);
+    //         syncImages.upload(function(htmlImages, serverImages) {
+    //             if (serverImages.length != htmlImages.length) {
+    //                 NotifyTips.showPersistent('uploadImagesFail');
+    //                 self.syncState.setState('save.images.fail', arguments)
+    //                 return;
+    //             }
 
-                for (var i = 0; i < serverImages.length; i++) {
-                    var serverQueueItem = serverImages[i],
-                        htmlQueueItem = htmlImages[i];
-                    if (serverQueueItem.length != htmlQueueItem.length) {
-                        NotifyTips.showPersistent('uploadImagesFail');
-                        self.syncState.setState('save.images.fail', arguments)
-                    }
-                    for (var j = 0; j < serverQueueItem.length; j++) {
-                        var serverImgData = serverQueueItem[j];
-                        htmlQueueItem[j].image.src = serverImgData.Url;
-                    }
-                }
-                NotifyTips.showPersistent('uploadImagesSuccess');
-                self.syncState.setState('save.images.success')
-            }, function() {
-                NotifyTips.showPersistent('uploadImagesFail');
-                self.syncState.setState('save.images.fail', arguments)
-            })
-        } else {
-            //不需要保存图片只要将状态设置为图片已经完成上传，继续后续事件
-            self.syncState.setState('save.images.success')
-        }
-    }
+    //             for (var i = 0; i < serverImages.length; i++) {
+    //                 var serverQueueItem = serverImages[i],
+    //                     htmlQueueItem = htmlImages[i];
+    //                 if (serverQueueItem.length != htmlQueueItem.length) {
+    //                     NotifyTips.showPersistent('uploadImagesFail');
+    //                     self.syncState.setState('save.images.fail', arguments)
+    //                 }
+    //                 for (var j = 0; j < serverQueueItem.length; j++) {
+    //                     var serverImgData = serverQueueItem[j];
+    //                     htmlQueueItem[j].image.src = serverImgData.Url;
+    //                 }
+    //             }
+    //             NotifyTips.showPersistent('uploadImagesSuccess');
+    //             self.syncState.setState('save.images.success')
+    //         }, function() {
+    //             NotifyTips.showPersistent('uploadImagesFail');
+    //             self.syncState.setState('save.images.fail', arguments)
+    //         })
+    //     } else {
+    //         //不需要保存图片只要将状态设置为图片已经完成上传，继续后续事件
+    //         self.syncState.setState('save.images.success')
+    //     }
+    // }
 
-    var MkSyncImage = function(imgEl) {
-        this.image = imgEl;
-    }
-    MkSyncImage.prototype.download = function(callback, errorFn, error404) {
-        var self = this,
-            image = self.image,
-            url = image.src,
-            xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onload = function(e) {
-            if (this.status == 200) {
-                var suffix = url.split('.'),
-                    blob = new Blob([this.response], {
-                        type: 'image/' + suffix[suffix.length - 1]
-                    }),
-                    parts = url.split('/'),
-                    fileName = parts[parts.length - 1];
-                MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
-                    callback(self, file)
-                }) //MKFileSystem.create todo...
-            } else if (this.status == 404) {
-                errorFn && errorFn(self, arguments);
-            } else {
-                // error404 && error404(self, arguments)
-                error404(self)
-            }
-        }
-        xhr.onerror = function() {
-            console.log('retrieve remote image xhr onerror')
-        }
-        xhr.onabort = function() {
-            console.log('retrieve remote image xhr onabort')
-        }
-        xhr.send(null);
-    }
+    // var MkSyncImage = function(imgEl) {
+    //     this.image = imgEl;
+    // }
+    // MkSyncImage.prototype.download = function(callback, errorFn, error404) {
+    //     var self = this,
+    //         image = self.image,
+    //         url = image.src,
+    //         xhr = new XMLHttpRequest();
+    //     xhr.open('GET', url, true);
+    //     xhr.responseType = 'arraybuffer';
+    //     xhr.onload = function(e) {
+    //         if (this.status == 200) {
+    //             var suffix = url.split('.'),
+    //                 blob = new Blob([this.response], {
+    //                     type: 'image/' + suffix[suffix.length - 1]
+    //                 }),
+    //                 parts = url.split('/'),
+    //                 fileName = parts[parts.length - 1];
+    //             MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
+    //                 callback(self, file)
+    //             }) //MKFileSystem.create todo...
+    //         } else if (this.status == 404) {
+    //             errorFn && errorFn(self, arguments);
+    //         } else {
+    //             // error404 && error404(self, arguments)
+    //             error404(self)
+    //         }
+    //     }
+    //     xhr.onerror = function() {
+    //         console.log('retrieve remote image xhr onerror')
+    //     }
+    //     xhr.onabort = function() {
+    //         console.log('retrieve remote image xhr onabort')
+    //     }
+    //     xhr.send(null);
+    // }
 
-    var MkSyncImages = function(note, syncImageAry, option) {
-        this.images = syncImageAry;
-        this.note = note;
-        this.option = option || {};
-    }
-    MkSyncImages.prototype.upload = function(successCallback, failCallback) {
-        /**
-         * 判断是否登陆
-         * todo...
-         */
-        var self = this,
-            images = self.images,
-            note = self.note,
-            option = self.option,
-            downloadState = {
-                success: 'download-success',
-                error: 'download-error',
-                error404: 'download-404'
-            },
-            errorBreak = false,
-            completedImageState = {
-                waitting: 'waitting',
-                error: 'error'
-            }
+    // var MkSyncImages = function(note, syncImageAry, option) {
+    //     this.images = syncImageAry;
+    //     this.note = note;
+    //     this.option = option || {};
+    // }
+    // MkSyncImages.prototype.upload = function(successCallback, failCallback) {
+    //     /**
+    //      * 判断是否登陆
+    //      * todo...
+    //      */
+    //     var self = this,
+    //         images = self.images,
+    //         note = self.note,
+    //         option = self.option,
+    //         downloadState = {
+    //             success: 'download-success',
+    //             error: 'download-error',
+    //             error404: 'download-404'
+    //         },
+    //         errorBreak = false,
+    //         completedImageState = {
+    //             waitting: 'waitting',
+    //             error: 'error'
+    //         }
 
 
-            /**
-             * 图片请求是否成功都需要uploadPackDataForm做整体判断，
-             * 好处：统一处理，防止已完成的图片的 requestFileSystem 或被删除。失败的请求比起成功的少很多，也这样做也减轻了逻辑出错
-             * 坏处：图片请求出错不能立即通知程序，会有延迟。
-             */
+    //         /**
+    //          * 图片请求是否成功都需要uploadPackDataForm做整体判断，
+    //          * 好处：统一处理，防止已完成的图片的 requestFileSystem 或被删除。失败的请求比起成功的少很多，也这样做也减轻了逻辑出错
+    //          * 坏处：图片请求出错不能立即通知程序，会有延迟。
+    //          */
 
-        for (var i = 0; i < images.length; i++) {
-            if (errorBreak) break;
-            images[i].download(function(img, file) {
-                img.file = file;
-                img.state = downloadState.success;
-                uploadPackDataForm();
-            }, function(img) {
-                img.state = downloadState.error;
-                errorBreak = true;
-                uploadPackDataForm();
-            }, function(img) {
-                img.state = downloadState.error404;
-                uploadPackDataForm();
-            })
-        }
+    //     for (var i = 0; i < images.length; i++) {
+    //         if (errorBreak) break;
+    //         images[i].download(function(img, file) {
+    //             img.file = file;
+    //             img.state = downloadState.success;
+    //             uploadPackDataForm();
+    //         }, function(img) {
+    //             img.state = downloadState.error;
+    //             errorBreak = true;
+    //             uploadPackDataForm();
+    //         }, function(img) {
+    //             img.state = downloadState.error404;
+    //             uploadPackDataForm();
+    //         })
+    //     }
 
-        function uploadPackDataForm(imagesCompletedAry) {
-            var imagesCompletedAry = getCompletedAry();
-            if (imagesCompletedAry == completedImageState.error) {
-                failCallback && failCallback();
-                return;
-            }
-            if (imagesCompletedAry instanceof Array) {
-                console.log('array')
-                var queueObj = packDataForm(imagesCompletedAry),
-                    formDataQueue = queueObj.formDataQueue,
-                    imagesQueue = queueObj.imagesQueue,
-                    uploadCompletedCount = 0,
-                    uploadCompletedData = [],
-                    imagesNewQueue = [];
-                if (formDataQueue.length == 0) {
-                    successCallback(imagesNewQueue, uploadCompletedData);
-                    return;
-                }
-                for (var j = 0; j < formDataQueue.length; j++) {
-                    var formData = formDataQueue[j],
-                        imgItems = imagesQueue[j];
-                    (function(formData, imgItems) {
-                        saveImage(formData, function(data) {
-                            uploadCompletedCount++;
-                            uploadCompletedData.push(data);
-                            //根据upload的图片从新排序原始img标签数据顺序
-                            imagesNewQueue.push(imgItems);
-                            if (uploadCompletedCount == formDataQueue.length) {
-                                successCallback(imagesNewQueue, uploadCompletedData);
-                            }
-                        });
-                    })(formData, imgItems)
-                }
-            }
-        }
+    //     function uploadPackDataForm(imagesCompletedAry) {
+    //         var imagesCompletedAry = getCompletedAry();
+    //         if (imagesCompletedAry == completedImageState.error) {
+    //             failCallback && failCallback();
+    //             return;
+    //         }
+    //         if (imagesCompletedAry instanceof Array) {
+    //             console.log('array')
+    //             var queueObj = packDataForm(imagesCompletedAry),
+    //                 formDataQueue = queueObj.formDataQueue,
+    //                 imagesQueue = queueObj.imagesQueue,
+    //                 uploadCompletedCount = 0,
+    //                 uploadCompletedData = [],
+    //                 imagesNewQueue = [];
+    //             if (formDataQueue.length == 0) {
+    //                 successCallback(imagesNewQueue, uploadCompletedData);
+    //                 return;
+    //             }
+    //             for (var j = 0; j < formDataQueue.length; j++) {
+    //                 var formData = formDataQueue[j],
+    //                     imgItems = imagesQueue[j];
+    //                 (function(formData, imgItems) {
+    //                     saveImage(formData, function(data) {
+    //                         uploadCompletedCount++;
+    //                         uploadCompletedData.push(data);
+    //                         //根据upload的图片从新排序原始img标签数据顺序
+    //                         imagesNewQueue.push(imgItems);
+    //                         if (uploadCompletedCount == formDataQueue.length) {
+    //                             successCallback(imagesNewQueue, uploadCompletedData);
+    //                         }
+    //                     });
+    //                 })(formData, imgItems)
+    //             }
+    //         }
+    //     }
 
-        function packDataForm(packImages) {
-            var maxUploadSize = 1024 * 1024 * 10,
-                currentUploadSize = 0,
-                formDataQueue = [],
-                imagesQueue = [],
-                formData, imagesAry;
-            for (var i = 0; i < packImages.length; i++) {
-                var file = packImages[i].file;
-                if (currentUploadSize + file.size > maxUploadSize || !formData) {
-                    formData = createFormData();
-                    imagesAry = [];
-                    formDataQueue.push(formData);
-                    imagesQueue.push(imagesAry)
-                    currentUploadSize = 0;
-                }
-                currentUploadSize += file.size;
-                formData.append('file' + i, file);
-                imagesAry.push(packImages[i]);
-            }
-            return {
-                formDataQueue: formDataQueue,
-                imagesQueue: imagesQueue
-            }
-        }
+    //     function packDataForm(packImages) {
+    //         var maxUploadSize = 1024 * 1024 * 10,
+    //             currentUploadSize = 0,
+    //             formDataQueue = [],
+    //             imagesQueue = [],
+    //             formData, imagesAry;
+    //         for (var i = 0; i < packImages.length; i++) {
+    //             var file = packImages[i].file;
+    //             if (currentUploadSize + file.size > maxUploadSize || !formData) {
+    //                 formData = createFormData();
+    //                 imagesAry = [];
+    //                 formDataQueue.push(formData);
+    //                 imagesQueue.push(imagesAry)
+    //                 currentUploadSize = 0;
+    //             }
+    //             currentUploadSize += file.size;
+    //             formData.append('file' + i, file);
+    //             imagesAry.push(packImages[i]);
+    //         }
+    //         return {
+    //             formDataQueue: formDataQueue,
+    //             imagesQueue: imagesQueue
+    //         }
+    //     }
 
-        function getCompletedAry() {
-            var successCount = 0,
-                error404Count = 0,
-                errorCount = 0,
-                completedAry = [];
-            for (var i = 0; i < images.length; i++) {
-                var image = images[i];
-                if (image.state == downloadState.success) {
-                    successCount++;
-                    completedAry.push(image);
-                } else if (image.state == downloadState.error404) {
-                    error404Count++;
-                } else if (image.state == downloadState.error) {
-                    errorCount++;
-                }
-            }
-            if ((successCount + error404Count) == images.length) {
-                return completedAry;
-            } else if (errorCount > 0 && (successCount + error404Count + errorCount) == images.length) {
-                return completedImageState.error;
-            } else {
-                return completedImageState.waitting;
-            }
-        }
+    //     function getCompletedAry() {
+    //         var successCount = 0,
+    //             error404Count = 0,
+    //             errorCount = 0,
+    //             completedAry = [];
+    //         for (var i = 0; i < images.length; i++) {
+    //             var image = images[i];
+    //             if (image.state == downloadState.success) {
+    //                 successCount++;
+    //                 completedAry.push(image);
+    //             } else if (image.state == downloadState.error404) {
+    //                 error404Count++;
+    //             } else if (image.state == downloadState.error) {
+    //                 errorCount++;
+    //             }
+    //         }
+    //         if ((successCount + error404Count) == images.length) {
+    //             return completedAry;
+    //         } else if (errorCount > 0 && (successCount + error404Count + errorCount) == images.length) {
+    //             return completedImageState.error;
+    //         } else {
+    //             return completedImageState.waitting;
+    //         }
+    //     }
 
-        function createFormData() {
-            var f = new FormData();
-            f.append('type', option.type ? 'Attachment' : 'Embedded');
-            f.append('categoryId', note.categoryid || '');
-            f.append('id', note.noteid || '');
-            return f;
-        }
+    //     function createFormData() {
+    //         var f = new FormData();
+    //         f.append('type', option.type ? 'Attachment' : 'Embedded');
+    //         f.append('categoryId', note.categoryid || '');
+    //         f.append('id', note.noteid || '');
+    //         return f;
+    //     }
 
-        function saveImage(formData, successCallback, failCallback) {
-            console.log('why')
-            $.ajax({
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                url: window.maikuNote.baseUrl + "/attachment/savemany?d=" + (Math.random()),
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(data) {
-                    successCallback(data)
-                },
-                error: function() {
-                    failCallback && failCallback(arguments);
-                }
-            });
-        }
-    }
+    //     function saveImage(formData, successCallback, failCallback) {
+    //         console.log('why')
+    //         $.ajax({
+    //             headers: {
+    //                 'X-Requested-With': 'XMLHttpRequest'
+    //             },
+    //             url: window.maikuNote.baseUrl + "/attachment/savemany?d=" + (Math.random()),
+    //             type: "POST",
+    //             data: formData,
+    //             processData: false,
+    //             contentType: false,
+    //             success: function(data) {
+    //                 successCallback(data)
+    //             },
+    //             error: function() {
+    //                 failCallback && failCallback(arguments);
+    //             }
+    //         });
+    //     }
+    // }
 
-    var MkFileSystem = {};
-    MkFileSystem.files = [];
-    MkFileSystem.removeFiles = function() {
-        var errorFn = MkFileSystem.onFileError;
-        for (var idx in MkFileSystem.files) {
-            var file = files[idx],
-                fileSize = file.size,
-                fileName = file.name;
-            window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
-                fs.root.getFile(fileName, {}, function(fileEntry) {
-                    fileEntry.remove(function() {
-                        console.log('File ' + fileName + ' removed.');
-                    }, errorFn);
-                }, errorFn);
-            }, errorFn);
-        }
-    }
-    MkFileSystem.onFileError = function(err) {
-        for (var p in FileError) {
-            if (FileError[p] == err.code) {
-                console.log('Error code: ' + err.code + 'Error info: ' + p);
-                break;
-            }
-        }
-    }
-    MkFileSystem.create = function(size, fileName, blob, callback, errorFn) {
-        var errorFn = MkFileSystem.onFileError;
-        window.requestFileSystem(TEMPORARY, size, function(fs) {
-            fs.root.getFile(fileName, {
-                create: true
-            }, function(fileEntry) {
-                fileEntry.createWriter(function(fileWriter) {
-                    fileWriter.onwrite = function(e) {
-                        fileEntry.file(function(file) {
-                            MkFileSystem.files.push(file)
-                            callback(file);
-                        })
-                    }
-                    fileWriter.onerror = function(e) {
-                        console.log('Write failed: ' + e.toString());
-                    };
-                    fileWriter.write(blob);
-                }, errorFn)
-            }, errorFn);
-        }, errorFn);
-    };
+    // var MkFileSystem = {};
+    // MkFileSystem.files = [];
+    // MkFileSystem.removeFiles = function() {
+    //     var errorFn = MkFileSystem.onFileError;
+    //     for (var idx in MkFileSystem.files) {
+    //         var file = files[idx],
+    //             fileSize = file.size,
+    //             fileName = file.name;
+    //         window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
+    //             fs.root.getFile(fileName, {}, function(fileEntry) {
+    //                 fileEntry.remove(function() {
+    //                     console.log('File ' + fileName + ' removed.');
+    //                 }, errorFn);
+    //             }, errorFn);
+    //         }, errorFn);
+    //     }
+    // }
+    // MkFileSystem.onFileError = function(err) {
+    //     for (var p in FileError) {
+    //         if (FileError[p] == err.code) {
+    //             console.log('Error code: ' + err.code + 'Error info: ' + p);
+    //             break;
+    //         }
+    //     }
+    // }
+    // MkFileSystem.create = function(size, fileName, blob, callback, errorFn) {
+    //     var errorFn = MkFileSystem.onFileError;
+    //     window.requestFileSystem(TEMPORARY, size, function(fs) {
+    //         fs.root.getFile(fileName, {
+    //             create: true
+    //         }, function(fileEntry) {
+    //             fileEntry.createWriter(function(fileWriter) {
+    //                 fileWriter.onwrite = function(e) {
+    //                     fileEntry.file(function(file) {
+    //                         MkFileSystem.files.push(file)
+    //                         callback(file);
+    //                     })
+    //                 }
+    //                 fileWriter.onerror = function(e) {
+    //                     console.log('Write failed: ' + e.toString());
+    //                 };
+    //                 fileWriter.write(blob);
+    //             }, errorFn)
+    //         }, errorFn);
+    //     }, errorFn);
+    // };
 
-    /*
+
+    /**
      * 当前又任何任务在执行是 都要显示提示窗口
      * 正在处理的任务状态是持续的提醒状态，
      * 瞬间操作为临时提醒，如将某某笔记加入到同步列队中等，仅显示几秒钟钟后，又显示当前的操作
      */
-    var NotifyTips = function() {
-        var persistentTips = '',
-            notification,
-            notificationTimer,
-            callback;
+    // var NotifyTips = function() {
+    //     var persistent,
+    //     temporary, notification, notificationTimer;
 
-        var sendMessage = function(data) {
-            if (!chrome.extension.sendMessage) return;
-            chrome.extension.sendMessage({
-                name: 'sendnotification',
-                data: data
-            });
-        }
+    //     var sendMessage = function(data) {
+    //         if (!chrome.extension.sendMessage) return;
+    //         chrome.extension.sendMessage({
+    //             name: 'sendnotification',
+    //             data: data
+    //         });
+    //     }
+    //     var create = function() {
+    //         notification = webkitNotifications.createHTMLNotification('notification.html');
+    //         notification.addEventListener('close', function(e) {
+    //             notification = null;
+    //         });
+    //         notification.show();
+    //     }
+    //     var getContent = function() {
+    //         var arg = arguments;
+    //         while (typeof arg[0] == 'object') {
+    //             arg = arg[0];
+    //         }
+    //         if (!arg && arg.length <= 0) return;
+    //         var key = arg[0];
+    //         var tips = chrome.i18n.getMessage(key);
+    //         var ary = [].slice.call(arg, 1);
+    //         for (var i = 0; i < ary.length; i++) {
+    //             var content = ary[i];
+    //             if (content == undefined) continue;
 
-        var showTips = function(content, title, isPersistent) {
-            if (!content) return;
+    //             var reg = new RegExp('\\{' + i + '\\}', 'g')
+    //             tips = tips.replace(reg, ary[i]);
+    //         }
+    //         return tips;
+    //     }
+    //     var getData = function() {
+    //         var content = getContent(arguments)
+    //         var data = {
+    //             content: content,
+    //             title: ''
+    //         }
+    //         return data;
+    //     }
 
-            var notificationData = {
-                content: content,
-                title: title || ''
-            }
+    //     var showTipsPersistent = function() {
+    //         clearTimeout(notificationTimer);
+    //         sendMessage(persistent.data);
+    //     }
 
-            if (notification) {
-                clearTimeout(notificationTimer);
-                sendMessage(notificationData);
-            } else {
-                NotifyTips.create();
-            }
-            console.log(persistentTips)
-            if (!isPersistent) {
-                notificationTimer = setTimeout(function() {
-                    callback && callback();
-                    if (persistentTips) {
-                        notificationData = {
-                            content: persistentTips,
-                            title: title || ''
-                        }
-                        sendMessage(notificationData);
-                    } else {
-                        notification && notification.cancel();
-                    }
-                }, 2000);
-            }
-        }
+    //     var showTipsTemporary = function() {
+    //         clearTimeout(notificationTimer);
+    //         sendMessage(temporary.data);
+    //         notificationTimer = setTimeout(function() {
+    //             temporary && temporary.callback && temporary.callback();
+    //             if (persistent && persistent.data) {
+    //                 sendMessage(persistent.data);
+    //             } else {
+    //                 notification && notification.cancel();
+    //             }
+    //         }, 2000);
+    //     }
+    //     var getCallback = function(args) {
+    //         if (args && args[args.length - 1] && args[args.length - 1] instanceof Function) {
+    //             return args[args.length - 1];
+    //         }
+    //         return;
+    //     }
 
-        var getContent = function() {
-            var arg = arguments;
-            while (typeof arg[0] == 'object') {
-                arg = arg[0];
-            }
-            if (!arg && arg.length <= 0) return;
-            var key = arg[0];
-            var tips = chrome.i18n.getMessage(key);
-            var ary = [].slice.call(arg, 1);
-            for (var i = 0; i < ary.length; i++) {
-                var content = ary[i];
-                if (content == undefined) continue;
-                if (typeof content == 'function') {
-                    callback = content;
-                }
-                var reg = new RegExp('\\{' + i + '\\}', 'g')
-                tips = tips.replace(reg, ary[i]);
-            }
-            return tips;
-        }
-        return {
-            showPersistent: function() {
-                persistentTips = getContent(arguments);
-                showTips(persistentTips, '', true);
-            },
-            showTemporary: function() {
-                if (!notification) {
-                    NotifyTips.showPersistent(arguments);
-                    return;
-                }
-                var content = getContent(arguments);
-                showTips(content, '', false);
-            },
-            clear: function() {
-                persistentTips = '',
-                // notification = null,
-                notificationTimer = null,
-                callback = null;
-            },
-            create: function() {
-                notification = webkitNotifications.createHTMLNotification('notification.html');
-                notification.addEventListener('close', function(e) {
-                    notification = null;
-                });
-                notification.show();
-            }
-        }
+    //     var init = function(args) {
+    //         var data = getData(args);
+    //         var obj = {};
+    //         obj.data = data;
+    //         obj.callback = getCallback(args);
+    //         return obj;
+    //     }
 
-    }();
+
+    //     return {
+    //         showPersistent: function() {
+    //             if (!notification) create();
+    //             persistent = init(arguments);
+    //             showTipsPersistent();
+    //         },
+    //         showTemporary: function() {
+    //             if (!notification) create();
+    //             temporary = init(arguments);
+    //             showTipsTemporary();
+    //         },
+    //         clear: function() {
+    //             persistent = null,
+    //             temporary = null,
+    //             notificationTimer = null;
+    //         }
+    //     }
+    // }()
 
 })(jQuery);
