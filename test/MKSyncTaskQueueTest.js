@@ -32,7 +32,8 @@ describe('MKSyncTaskQueue', function() {
             MKSyncTaskQueue.addError(mkNote);
 
             var html = MKSyncTaskQueue.getErrorContentHTML();
-            html.should.equal(getErrorTips([note.title]));
+            
+            html.should.equal(getErrorTips([note]));
         })
 
         it('add two error', function() {

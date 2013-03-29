@@ -26,6 +26,8 @@ MkSyncNode.prototype.init = function() {
     var self = this,
         option = self.option,
         content = self.note.notecontent;
+    this.images = [];
+    console.log('this.images = []');
     NotifyTips.showPersistent('noteInit', self.note.title);
     self.post(function(data) {
         self.note.noteid = data.Note.NoteID;
@@ -64,6 +66,7 @@ MkSyncNode.prototype.post = function(successCallback, failCallback) {
         url: option.baseUrl + '/note/save',
         data: JSON.stringify(note),
         success: function(data) {
+            console.log(data);
             if (data.error) {
                 if (data.error == 'notlogin') {
                     NotifyTips.showPersistent('syncTaskAdd');
@@ -85,7 +88,7 @@ MkSyncNode.prototype.delete = function() {
         option = self.option,
         noteid = self.note.noteid;
     // NotifyTips.showPersistent('noteDelete', self.note.title);
-
+    console.log('delete');
     $.ajax({
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -111,9 +114,10 @@ MkSyncNode.prototype.saveImages = function() {
         filteredImg = [];
     //maikuNoteOptions.serializeImg 要修改 改成传入参数而不是全局的
     if (maikuNoteOptions.serializeImg) {
+        console.log('imgs.length:' + imgs.length);
         for (var i = 0; i < imgs.length; i++) {
             var img = imgs[i];
-            if (img.src.indexOf('data:image/') >= 0) continue;//有些插件在页面上有图
+            if (img.src.indexOf('data:image/') >= 0) continue; //有些插件在页面上有图
             if (img.src in filteredImg) continue;
 
             var obj = {};
@@ -122,6 +126,8 @@ MkSyncNode.prototype.saveImages = function() {
             self.images.push(new MkSyncImage(img));
         }
     }
+    console.log('self.images.length:' + self.images.length);
+
     if (self.images.length) {
         NotifyTips.showPersistent('uploadImages');
         var syncImages = new MkSyncImages(note, self.images, option);

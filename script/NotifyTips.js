@@ -5,7 +5,7 @@
  */
 var NotifyTips = function() {
     var persistent,
-    temporary, notification, notificationTimer;
+    temporary, notification, notificationTimer, clipperError = chrome.i18n.getMessage('ClipperNotReady');
 
     var sendMessage = function(data) {
         if (!chrome.extension.sendMessage) return;
@@ -19,6 +19,22 @@ var NotifyTips = function() {
         notification.addEventListener('close', function(e) {
             notification = null;
         });
+        var isInit = true;
+        notification.onclick = function() {
+            chrome.extension.getViews({
+                type: "notification"
+            }).forEach(function(win) {
+                if (isInit == true) {
+                    isInit = false;
+                    $('.repeat-btn', win.document).die('click').live('click', function() {
+                        MKSyncTaskQueue.repeat($(this).attr('data-guid'));
+                    })
+                    $('.cancel-btn', win.document).die('click').live('click', function() {
+                        MKSyncTaskQueue.remove($(this).attr('data-guid'));
+                    })
+                }
+            });
+        };
         notification.show();
     }
     var getContent = function() {
@@ -43,25 +59,29 @@ var NotifyTips = function() {
         var content = getContent(arguments)
         var data = {
             content: content,
-            title: ''
+            title: '',
+            error: '',
+            clipperError: ''
         }
         return data;
     }
 
     var showTipsPersistent = function() {
-        console.log('showTipsPersistent:' + persistent.data.content)
         clearTimeout(notificationTimer);
+        persistent.data.error = MKSyncTaskQueue.getErrorContentHTML();
         sendMessage(persistent.data);
     }
 
     var showTipsTemporary = function() {
-        console.log('showTipsTemporary:' + temporary.data.content)
         clearTimeout(notificationTimer);
         sendMessage(temporary.data);
         notificationTimer = setTimeout(function() {
             temporary && temporary.callback && temporary.callback();
+            var errorQueue = MKSyncTaskQueue.getErrorQueue();
             if (persistent && persistent.data) {
                 sendMessage(persistent.data);
+            } else if (errorQueue && errorQueue.length > 0) {
+                NotifyTips.refresh();
             } else {
                 notification && notification.cancel();
             }
@@ -100,13 +120,38 @@ var NotifyTips = function() {
             notificationTimer = null;
         },
         showError: function() {
-            var content = MKSyncTaskQueue.getErrorContentHTML();
+            var error = MKSyncTaskQueue.getErrorContentHTML();
             var data = {
-                content: content,
-                title: ''
+                content: '',
+                title: '',
+                error: error
             }
-            console.log(content)
             sendMessage(data)
+        },
+        refresh: function() {
+            NotifyTips.showPersistent();
+        },
+        close: function() {
+            NotifyTips.clear();
+            notification.close();
+            notification = null;
+        },
+        tipsClipperNotReady: function() {
+            if (!notification) create();
+            clearTimeout(notificationTimer);
+            persistent = {};
+            var data = NotifyTips.getNotificationData();
+            persistent.data = data;
+            sendMessage(persistent.data);
+        },
+        getNotificationData:function(){
+            var data = {
+                content: '',
+                title: '',
+                error: '',
+                clipperError: clipperError
+            };
+            return data;
         }
     }
 }()

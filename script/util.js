@@ -22,6 +22,12 @@
     }
 
     String.createGuid = function() {
-       return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0, 3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+        return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0, 3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+    }
+
+
+
+    Array.prototype.removeAt = function(index) {
+        return this.slice(0, index).concat(this.slice(++index));
     }
 })()

@@ -9,13 +9,16 @@ var MKSyncTaskQueue = function() {
 	function endCurrentTask() {
 		//检查当前的任务是否完成
 		if (!currentTask) {
-			console.log('endCurrentTask:' + true)
 			return true;
 		}
 		if (currentTask.processState == 'success') {
 			if (queue.length > 0) {
 				NotifyTips.showPersistent('syncTaskSuccess', currentTask.note.note.title, function() {
 					NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
+				});
+			} else if (errorQueue.length > 0) {
+				NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
+					NotifyTips.refresh();
 				});
 			} else {
 				NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
@@ -24,7 +27,6 @@ var MKSyncTaskQueue = function() {
 				});
 			}
 			currentTask = null;
-			console.log('endCurrentTask:' + true)
 			return true;
 		} else if (currentTask.processState == 'fail') {
 			if (++currentTask.errorCount >= 3) {
@@ -32,11 +34,9 @@ var MKSyncTaskQueue = function() {
 				currentTask = null;
 				if (queue.length > 0) {
 					NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
-				}
-				else{
+				} else {
 					NotifyTips.showError()
 				}
-				console.log('endCurrentTask:' + true)
 				return true;
 			} else {
 				currentTask.repeat(function() {
@@ -45,14 +45,22 @@ var MKSyncTaskQueue = function() {
 						MKSyncTaskQueue.start();
 					}, 1000 * 5)
 				});
-				console.log('endCurrentTask:' + false)
 				return false;
 			}
 		} else {
-			console.log('endCurrentTask:' + false)
 			return false;
 		}
-		console.log('endCurrentTask: null')
+	}
+
+	function getErrorIndex(taskGuid) {
+		var index;
+		for (index in errorQueue) {
+			var task = errorQueue[index];
+			if (task.guid == taskGuid) {
+				break;
+			}
+		}
+		return index;
 	}
 
 	return {
@@ -64,7 +72,6 @@ var MKSyncTaskQueue = function() {
 			if (!endCurrentTask()) return;
 
 			currentTask = queue.shift();
-			console.log(currentTask)
 			if (!currentTask) return;
 
 			//每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
@@ -76,7 +83,7 @@ var MKSyncTaskQueue = function() {
 			})
 		},
 		end: function() {
-			if(endCurrentTask()){
+			if (endCurrentTask()) {
 				MKSyncTaskQueue.start();
 			}
 		},
@@ -86,11 +93,9 @@ var MKSyncTaskQueue = function() {
 		getErrorContentHTML: function() {
 			var html = '';
 			for (var index in errorQueue) {
-				var note = errorQueue[index].note
-				html += errorContentTemplate.replaceTemplate(note.title)
-			}
-			if (html != '') {
-				html = "<ul class='error-tips'>" + html + "</ul>";
+				if (!errorQueue[index].note || !errorQueue[index].note.note) continue;
+				var note = errorQueue[index].note.note;
+				html += errorContentTemplate.replaceTemplate([note.title, errorQueue[index].guid])
 			}
 			return html;
 		},
@@ -99,6 +104,28 @@ var MKSyncTaskQueue = function() {
 		},
 		clearError: function() {
 			errorQueue = [];
+		},
+		repeat: function(taskGuid) {
+			var index = getErrorIndex(taskGuid);
+			var task = errorQueue[index];
+			task.errorCount = 0;
+			errorQueue = errorQueue.removeAt(index);
+			MKSyncTaskQueue.add(task);
+			MKSyncTaskQueue.start();
+			NotifyTips.refresh(); //重新刷新提示
+		},
+		remove: function(taskGuid) {
+			var index = getErrorIndex(taskGuid);
+			var task = errorQueue[index];
+			errorQueue = errorQueue.removeAt(index);
+			if (queue.length == 0 && currentTask == null && errorQueue.length == 0) {
+				NotifyTips.close();
+			} else {
+				NotifyTips.refresh(); //重新刷新提示
+			}
+		},
+		getErrorQueue: function() {
+			return errorQueue;
 		}
 	}
 }();

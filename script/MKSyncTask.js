@@ -4,6 +4,7 @@ var MKSyncTask = function(noteData, option) {
     this.option = option;
     this.processState = '';
     this.errorCount = 0; //任务出错次数
+    this.guid = String.createGuid();
 }
 MKSyncTask.prototype.sync = function(callback) {
     var self = this,
@@ -16,6 +17,8 @@ MKSyncTask.prototype.sync = function(callback) {
      * 如果每次处理的回调不同，可以继承扩展当前的MKSyncTask
      * 让每个MkSyncNode对象继承Backbone.Events
      */
+    this.note.note.noteid = '';
+    syncState.off("changeState");
     syncState.on('changeState', function(state, data) {
         if (state == 'note.init') {
             //笔记正在初始化
@@ -50,7 +53,7 @@ MKSyncTask.prototype.end = function(state) {
 }
 MKSyncTask.prototype.repeat = function(callback){
     NotifyTips.showTemporary('noteRepeatSave');
-    this.note.note.noteid = '';
-    this.state.off("changeState");
+    // this.note.note.noteid = '';
+    // this.state.off("changeState");
     this.sync(callback);
 }
