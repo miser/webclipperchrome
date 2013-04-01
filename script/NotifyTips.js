@@ -144,7 +144,7 @@ var NotifyTips = function() {
             persistent.data = data;
             sendMessage(persistent.data);
         },
-        getNotificationData:function(){
+        getNotificationData: function() {
             var data = {
                 content: '',
                 title: '',
@@ -154,4 +154,24 @@ var NotifyTips = function() {
             return data;
         }
     }
-}()
+}();
+
+var ReadyErrorNotify = (function() {
+
+    var notification = null;
+
+    return {
+        show: function() {
+            if (!notification) {
+                notification = webkitNotifications.createHTMLNotification('readyerror.html');
+                notification.addEventListener('close', function(e) {
+                    notification = null;
+                });
+                notification.show();
+            }
+        },
+        close: function() {
+            if (notification) notification.close();
+        }
+    }
+}());

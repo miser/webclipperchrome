@@ -31,4 +31,5 @@
    "permissions": ["tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*","unlimitedStorage"],
    "version": "3.3",
    "web_accessible_resources": ["popup.html", "loading.html"]
+   // "content_security_policy":"default-src 'self'"
 }

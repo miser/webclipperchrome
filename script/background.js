@@ -1,4 +1,4 @@
-﻿//@huntbao @mknote
+//@huntbao @mknote
 //All right reserved
 //Notice: chrome version below 20 will not work for this extension
 //(since it has no chrome.extension.sendMessage method and Blob() constructor is illegal and etc.)
@@ -28,9 +28,13 @@
             });
         },
         createPopup: function() {
-            chrome.tabs.executeScript(null, {
-                code: "maikuClipper.createPopup();"
-            });
+            try {
+                chrome.tabs.executeScript(null, {
+                    code: "try{maikuClipper.createPopup();}catch(e){var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
+                });
+            } catch (e) {
+                console.log(e)
+            }
         },
         closePopup: function() {
             chrome.tabs.executeScript(null, {
@@ -430,6 +434,8 @@
                     case 'getselectedcontent':
                         self.getpagecontentConnect(port);
                         break;
+                    case 'maikuclipperisready':
+                        self.maikuclipperisreadyHandlerConnect(port);
                     case 'maikuclipperisnotready':
                         self.maikuclipperisnotreadyHandlerConnect(port);
                         break;
@@ -452,7 +458,6 @@
         },
         savenotefrompopupHandler: function(port) {
             var self = this;
-            // var taskQueue = MKSyncTaskQueue();
             port.onMessage.addListener(function(msg) {
                 var note = {
                     title: msg.title,
@@ -462,80 +467,7 @@
                     categoryid: msg.categoryid
                 }
                 MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                MKSyncTaskQueue.start()
-                //     var defaultData = {
-                //     title: '[未命名笔记]',
-                //     sourceurl: '',
-                //     notecontent: '',
-                //     tags: '',
-                //     categoryid: '',
-                //     noteid: '',
-                //     importance: 0
-                // };
-                /*
-                var normalSave = function() {
-                        self.saveNote(msg.title, msg.sourceurl, msg.notecontent, msg.tags, msg.categoryid, '', '', function() {
-                            self.closePopup();
-                        });
-                    }
-                if(maikuNoteOptions.serializeImg) {
-                    var content = $('<div></div>').append(msg.notecontent),
-                        imgs = content.find('img'),
-                        needReplaceImgs = [],
-                        filteredImg = {},
-                        filteredImgTitles = [],
-                        isToSave = function(url) {
-                            var suffix = url.substr(url.length - 4);
-                            return /^\.(gif|jpg|png)$/.test(suffix);
-                        }
-                    if(imgs.length > 0) {
-                        for(var i = 0, img, l = imgs.length, src; i < l; i++) {
-                            img = imgs[i];
-                            src = img.src;
-                            // 图片的格式不仅仅有gif,jpg,png 可能还有别的
-                            // 也有可能没有扩展名或含有"?"+随机字符串的格式
-                            // 暂时去掉
-                            // if(!isToSave(src)) continue;
-                            if(filteredImg[src]) continue;
-                            filteredImg[src] = 1;
-                            filteredImgTitles.push(img.title || img.alt || '');
-                            needReplaceImgs.push(img);
-                        }
-                        self.saveImgs({
-                            imgs: Object.keys(filteredImg),
-                            imgTitles: filteredImgTitles,
-                            title: msg.title,
-                            sourceurl: msg.sourceurl,
-                            categoryId: msg.categoryid
-                        }, function(uploadedImageData, needReplaceQueueItem, noteId, isSave) {
-                            var realIndex, d, needImg;
-                            for(var i = 0, l = uploadedImageData.length; i < l; i++) {
-                                if((d = uploadedImageData[i]) && (needImg = needReplaceQueueItem[i])) {
-                                    needImg.src = d.Url;
-                                }
-                                // realIndex = serializeSucceedImgIndexByOrder[i];
-                                // if(realIndex) {
-                                //     d = uploadedImageData[realIndex];
-                                //     needReplaceImgs[i].src = d.Url;
-                                //     delete serializeSucceedImgIndexByOrder[i];
-                                // }
-                            }
-                            if(isSave) {
-                                self.saveNote(msg.title, msg.sourceurl, content.html(), msg.tags, msg.categoryid, noteId, '', function() {
-                                    self.closePopup();
-                                });
-                            }
-                        }, function() {
-                            //all images upload failed or serialize failed, just save the clipped content
-                            normalSave();
-                        });
-                    } else {
-                        normalSave();
-                    }
-                } else {
-                    normalSave();
-                }
-                */
+                MKSyncTaskQueue.start();
             });
         },
         allimagesHandlerConnect: function(port) {
@@ -614,10 +546,16 @@
                 }
             });
         },
+        maikuclipperisreadyHandlerConnect: function(port) {
+            var self = this;
+            port.onMessage.addListener(function(msg) {
+                ReadyErrorNotify.close();
+            });
+        },
         maikuclipperisnotreadyHandlerConnect: function(port) {
             var self = this;
             port.onMessage.addListener(function(msg) {
-                NotifyTips.tipsClipperNotReady()
+                ReadyErrorNotify.show();
                 // self.notifyHTML(chrome.i18n.getMessage('ClipperNotReady'));
             });
         },
@@ -905,6 +843,12 @@
                         }
                     });
                 }
+            });
+            chrome.tabs.onHighlighted.addListener(function(highlightInfo) {
+                ReadyErrorNotify.close();
+            });
+            chrome.tabs.onUpdated.addListener(function(id, info, tab) {
+                ReadyErrorNotify.close();
             });
         },
         initExtensionRequest: function() {

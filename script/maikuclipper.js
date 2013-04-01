@@ -7,7 +7,7 @@
         init: function() {
             var self = this;
             $(document).keydown(function(e) {
-                if(e.ctrlKey && e.shiftKey && e.keyCode == 88 /*x*/ ) {
+                if (e.ctrlKey && e.shiftKey && e.keyCode == 88 /*x*/ ) {
                     var port = chrome.extension.connect({
                         name: 'createpopup'
                     });
@@ -33,11 +33,11 @@
                     var suffix = url.substr(url.length - 4);
                     return /^\.(gif|jpg|png)$/.test(suffix);
                 }
-            for(var i = 0, img, l = imgs.length, src; i < l; i++) {
+            for (var i = 0, img, l = imgs.length, src; i < l; i++) {
                 img = imgs[i];
                 src = img.src;
-                if(!isToSave(src)) continue;
-                if(filteredImg[src]) continue;
+                if (!isToSave(src)) continue;
+                if (filteredImg[src]) continue;
                 filteredImg[src] = 1;
                 filteredImgTitles.push(img.title || img.alt || '');
             }
@@ -53,8 +53,8 @@
         },
         getImagebyUrl: function(url, selector) {
             var imgs = document.querySelectorAll(selector || 'img');
-            for(var i = 0, l = imgs.length; i < l; i++) {
-                if(imgs[i].src == url) {
+            for (var i = 0, l = imgs.length; i < l; i++) {
+                if (imgs[i].src == url) {
                     return imgs[i];
                 }
             }
@@ -66,7 +66,7 @@
                     sourceurl: location.href
                 },
                 linkArr = [];
-            for(var i = 0, l = links.length, a; i < l; i++) {
+            for (var i = 0, l = links.length, a; i < l; i++) {
                 linkArr.push(self.getSendObjByLink(links[i]));
             }
             sendObj.links = linkArr;
@@ -79,7 +79,7 @@
         getLinkInfoByUrl: function(url) {
             var self = this,
                 a = self.getLinkByUrl(url);
-            if(a) {
+            if (a) {
                 var port = chrome.extension.connect({
                     name: 'link'
                 }),
@@ -90,8 +90,8 @@
         },
         getLinkByUrl: function(url, selector) {
             var as = document.querySelectorAll(selector || 'a');
-            for(var i = 0, l = as.length; i < l; i++) {
-                if(as[i].href == url) {
+            for (var i = 0, l = as.length; i < l; i++) {
+                if (as[i].href == url) {
                     return as[i];
                 }
             }
@@ -108,12 +108,12 @@
                 commonAncestorContainer = self.getSelectionContainer(),
                 content = '',
                 title = '';
-            if(commonAncestorContainer === null || $(commonAncestorContainer).text() === '') {
+            if (commonAncestorContainer === null || $(commonAncestorContainer).text() === '') {
                 content = false;
-            } else if(commonAncestorContainer.nodeType === 3) {
+            } else if (commonAncestorContainer.nodeType === 3) {
                 content = $(commonAncestorContainer).text();
                 title = content;
-            } else if(commonAncestorContainer.nodeType === 1) {
+            } else if (commonAncestorContainer.nodeType === 1) {
                 var selectedHTML = self.getSelectedHTML();
                 var tempNode = $('<div>', {
                     html: selectedHTML
@@ -124,7 +124,7 @@
                 tempNode.remove();
                 content = html;
             }
-            if(content) {
+            if (content) {
                 var port = chrome.extension.connect({
                     name: 'getselectedcontent'
                 });
@@ -137,14 +137,14 @@
         },
         getSelectionContainer: function() {
             var container = null;
-            if(window.getSelection) {
+            if (window.getSelection) {
                 var selectionRange = window.getSelection();
-                if(selectionRange.rangeCount > 0) {
+                if (selectionRange.rangeCount > 0) {
                     var range = selectionRange.getRangeAt(0);
                     container = range.commonAncestorContainer;
                 }
             } else {
-                if(document.selection) {
+                if (document.selection) {
                     var textRange = document.selection.createRange();
                     container = textRange.parentElement();
                 }
@@ -153,11 +153,11 @@
         },
         getSelectedHTML: function() {
             var userSelection;
-            if(window.getSelection) {
+            if (window.getSelection) {
                 //W3C Ranges
                 userSelection = window.getSelection();
                 //Get the range:
-                if(userSelection.getRangeAt) {
+                if (userSelection.getRangeAt) {
                     var range = userSelection.getRangeAt(0);
                 } else {
                     var range = document.createRange();
@@ -169,7 +169,7 @@
                 var div = document.createElement('div');
                 div.appendChild(clonedSelection);
                 return div.innerHTML;
-            } else if(document.selection) {
+            } else if (document.selection) {
                 //Explorer selection, return the HTML
                 userSelection = document.selection.createRange();
                 return userSelection.htmlText;
@@ -191,7 +191,7 @@
         },
         createMkClipWrap: function(zIndex, height) {
             var self = this;
-            if(!self.closePopup) {
+            if (!self.closePopup) {
                 self.closePopup = function() {
                     $(document).unbind('keydown.maikuclipperpopup');
                     self.removeInspector();
@@ -223,10 +223,10 @@
             obj.iframe[0].src = chrome.extension.getURL('popup.html');
             self.initDivHeight = parseInt(obj.wrap.css('height'));
             var judgeHeight = function(h) {
-                    if(h < 304) return 304;
-                    if(h > 644) return 644;
-                    return h;
-                }
+                if (h < 304) return 304;
+                if (h > 644) return 644;
+                return h;
+            }
             self.changeHeight = function(changeStep) {
                 obj.wrap.css('height', judgeHeight(self.initDivHeight + changeStep));
             }
@@ -244,7 +244,7 @@
             }
 
             $(document).bind('keydown.maikuclipperpopup', function(e) {
-                if(e.keyCode == 27) {
+                if (e.keyCode == 27) {
                     self.closePopup();
                 }
             });
@@ -252,27 +252,28 @@
         },
         createPopup: function() {
             var self = this;
-            if(self.isCreatedPopup) return;
+            if (self.isCreatedPopup) return;
             self.popupZIndex = 20120726;
             self.isCreatedPopup = true;
 
             var loadingEl, ClipEl;
+            console.log('createPopup');
 
             function showPage() {
-                if(self.isLoadComplated == true) {
-                    if(ClipEl) return;
-                    if(loadingEl) loadingEl.remove();
+                if (self.isLoadComplated == true) {
+                    if (ClipEl) return true;
+                    if (loadingEl) loadingEl.remove();
                     self.popupInstance = ClipEl = self.createClipEl(self.popupZIndex);
                     return true;
                 } else {
-                    if(loadingEl) return;
+                    if (loadingEl) return false;
                     self.popupInstance = loadingEl = self.createLoadingEl(self.popupZIndex);
                     return false;
                 }
             }
             showPage();
             var handler = setInterval(function() {
-                if(showPage()) {
+                if (showPage()) {
                     clearInterval(handler);
                 }
             }, 500);
@@ -280,42 +281,49 @@
         addWindowEventListener: function() {
             var self = this;
             window.addEventListener('message', function(e) {
-                switch(e.data.name) {
-                case 'createinspectorfrommaikupopup':
-                    self.createInspector(e.data.autoExtractContent);
-                    break;
-                case 'changeheightfrommaikupopup':
-                    self.changeHeight(e.data.param);
-                    break;
-                case 'stopchangeheightfrommaikupopup':
-                    self.initDivHeight = parseInt(self.popupInstance.css('height'));
-                    break;
-                case 'closefrommaikupopup':
-                    self.closePopup();
-                    break;
-                case 'resetfrommaikupopup':
-                    self.clearMarks();
-                    break;
-                case 'gotopfrommaikupopup':
-                    self.positionTop();
-                    break;
-                case 'gobottomfrommaikupopup':
-                    self.positionBottom();
-                    break;
-                case 'savenotefrommaikupopup':
-                    self.saveNote(e.data.notedata);
-                    break;
-                case 'showinspectorfrommaikupopup':
-                    self.showInspector();
-                    break;
-                case 'hideinspectorfrommaikupopup':
-                    self.hideInspector();
-                    break;
-                case 'hidemaskfrommaikupopup':
-                    self.mask && self.mask.hide();
-                    break;
-                default:
-                    break;
+                switch (e.data.name) {
+                    case 'createinspectorfrommaikupopup':
+                        self.createInspector(e.data.autoExtractContent);
+                        break;
+                    case 'changeheightfrommaikupopup':
+                        self.changeHeight(e.data.param);
+                        break;
+                    case 'stopchangeheightfrommaikupopup':
+                        self.initDivHeight = parseInt(self.popupInstance.css('height'));
+                        break;
+                    case 'closefrommaikupopup':
+                        console.log('close');
+                        self.closePopup();
+                        break;
+                    case 'resetfrommaikupopup':
+                        self.clearMarks();
+                        break;
+                    case 'gotopfrommaikupopup':
+                        self.positionTop();
+                        break;
+                    case 'gobottomfrommaikupopup':
+                        self.positionBottom();
+                        break;
+                    case 'savenotefrommaikupopup':
+                        self.saveNote(e.data.notedata);
+                        break;
+                    case 'showinspectorfrommaikupopup':
+                        self.showInspector();
+                        break;
+                    case 'hideinspectorfrommaikupopup':
+                        self.hideInspector();
+                        break;
+                    case 'hidemaskfrommaikupopup':
+                        self.mask && self.mask.hide();
+                        break;
+                    case 'pageCompleted':
+                        console.log('xx');
+                        self.isLoadComplated = true;
+                        console.log(self);
+                        console.log(self.isLoadComplated);
+                        break;
+                    default:
+                        break;
                 }
             }, true);
         },
@@ -392,16 +400,16 @@
             }).bind('mouseleave.maikuclippermark', function(e) {
                 self.mask.hide();
             });
-            if(autoExtractContent) {
+            if (autoExtractContent) {
                 //extract content
                 var extract = self.extractContent(document);
-                if(extract.isSuccess) {
+                if (extract.isSuccess) {
                     var extractedContent = extract.content.asNode();
-                    if(extractedContent.nodeType == 3) {
+                    if (extractedContent.nodeType == 3) {
                         extractedContent = extractedContent.parentNode;
                     }
                     setTimeout(function() {
-                        var title = document.title;//&& document.title.split('-')[0];
+                        var title = document.title; //&& document.title.split('-')[0];
                         self.addMark($(extractedContent), self.mark.clone(), title.trim());
                     }, 0);
                 } else {
@@ -416,13 +424,13 @@
         },
         hideInspector: function() {
             var self = this;
-            if(!self.markContainer) return;
+            if (!self.markContainer) return;
             self.markContainer.hide();
             self.body.unbind('mousemove.maikuclippermark').unbind('click.maikuclippermark');
         },
         showInspector: function() {
             var self = this;
-            if(!self.markContainer) return;
+            if (!self.markContainer) return;
             self.markContainer.show();
             self.body.bind('mousemove.maikuclippermark', function(e) {
                 self.mouseMoveMarkHandler(e);
@@ -432,7 +440,7 @@
         },
         removeInspector: function() {
             var self = this;
-            if(!self.markContainer) return;
+            if (!self.markContainer) return;
             self.markContainer.remove();
             self.markedElements = {};
             self.marks = {};
@@ -446,12 +454,12 @@
             var target = self.elementFromPoint(e),
                 isMark = target.attr('mkclip'),
                 isIgnore = false;
-            if(target.is('body, html') || isMark) {
+            if (target.is('body, html') || isMark) {
                 isIgnore = true;
             }
             //mouse in mark or remove-mark
             //hide cover so that remove-mark could be clicked
-            if(!isMark && !isIgnore) {
+            if (!isMark && !isIgnore) {
                 self.attachBox(target, self.mask);
             } else {
                 self.cover.hide();
@@ -462,15 +470,15 @@
             var self = this,
                 target = self.elementFromPoint(e),
                 isIgnore = false;
-            if(target.is('iframe, frame')) {
+            if (target.is('iframe, frame')) {
                 console.log('无法获取iframe及frame里面的内容');
                 return false;
             }
-            if(target.is('body, html')) {
+            if (target.is('body, html')) {
                 isIgnore = true;
             }
             self.removeMarkInElement(target);
-            if(!isIgnore) {
+            if (!isIgnore) {
                 self.addMark(target, self.mark.clone());
                 return false;
             }
@@ -515,20 +523,20 @@
             var self = this,
                 uid = mark.data('uid'),
                 parent = self.markedElements[uid].parent();
-            if(parent.is('html')) return;
+            if (parent.is('html')) return;
             self.removeMarkInElement(parent);
             self.addMark(parent, self.mark.clone());
         },
         removeMarkInElement: function(el) {
             var self = this,
                 markedPageElementInParent = {};
-            for(var uid in self.markedElements) {
-                if(el.find(self.markedElements[uid]).length > 0) {
+            for (var uid in self.markedElements) {
+                if (el.find(self.markedElements[uid]).length > 0) {
                     markedPageElementInParent[uid] = true;
                 }
             }
-            for(var uid in self.marks) {
-                if(markedPageElementInParent[uid]) {
+            for (var uid in self.marks) {
+                if (markedPageElementInParent[uid]) {
                     self.delMark(self.marks[uid]);
                 }
             }
@@ -541,7 +549,7 @@
                 top: e.pageY - $(window).scrollTop(),
                 left: e.pageX
             },
-                target = $(document.elementFromPoint(pos.left, pos.top));
+            target = $(document.elementFromPoint(pos.left, pos.top));
             self.cover.show();
             self.mask.show();
             return target;
@@ -560,16 +568,16 @@
                 //box on the page edge
                 //ajust the pos and size order to show the whole box
             var bodyOuterWidth = body.outerWidth();
-            if(pos.left == 0) {
-                if(size.width >= bodyOuterWidth) {
+            if (pos.left == 0) {
+                if (size.width >= bodyOuterWidth) {
                     size.width = bodyOuterWidth - 6;
                 }
-            } else if(pos.left + size.width >= bodyOuterWidth) {
+            } else if (pos.left + size.width >= bodyOuterWidth) {
                 size.width = bodyOuterWidth - pos.left - 6;
             } else {
                 pos.left -= 3;
             }
-            if(pos.top == 0) {
+            if (pos.top == 0) {
                 size.height -= 3;
             } else {
                 pos.top -= 3;
@@ -585,15 +593,15 @@
             var self = this,
                 filterTagsObj = self.filterTagsObj,
                 nodeTagName = node[0].tagName.toLowerCase();
-            if(filterTagsObj[nodeTagName]) {
+            if (filterTagsObj[nodeTagName]) {
                 return '';
             }
             var allEles = node[0].querySelectorAll('*'),
                 allElesLength = allEles.length,
                 nodeCSSStyleDeclaration = getComputedStyle(node[0]);
-            if(allElesLength == 0) {
+            if (allElesLength == 0) {
                 //no child
-                if(!/^(img|a)$/.test(nodeTagName) && node[0].innerHTML == 0 && nodeCSSStyleDeclaration['background-image'] == 'none') {
+                if (!/^(img|a)$/.test(nodeTagName) && node[0].innerHTML == 0 && nodeCSSStyleDeclaration['background-image'] == 'none') {
                     return '';
                 }
             }
@@ -601,14 +609,14 @@
                 allElesCloned = cloneNode[0].querySelectorAll('*'),
                 el, cloneEl, color, cssStyleDeclaration, styleObj = {},
                 cssValue, saveStyles = self.saveStyles;
-            for(var j = allElesLength - 1, tagName; j >= 0; j--) {
+            for (var j = allElesLength - 1, tagName; j >= 0; j--) {
                 cloneEl = allElesCloned[j];
                 tagName = cloneEl.tagName.toLowerCase();
-                if(filterTagsObj[tagName] || cloneEl.getAttribute('mkclip')) {
+                if (filterTagsObj[tagName] || cloneEl.getAttribute('mkclip')) {
                     $(cloneEl).remove();
                     continue;
                 }
-                if(tagName == 'br') {
+                if (tagName == 'br') {
                     continue;
                 }
                 el = allEles[j];
@@ -616,7 +624,7 @@
                 cloneEl = $(cloneEl);
                 color = cssStyleDeclaration.color;
                 styleObj = {};
-                if(tagName == 'img') {
+                if (tagName == 'img') {
                     cloneEl[0].src = cloneEl[0].src;
                     cloneEl.css({
                         width: cssStyleDeclaration.width,
@@ -626,33 +634,33 @@
                     });
                     continue;
                 }
-                for(var cssProperty in saveStyles) {
+                for (var cssProperty in saveStyles) {
                     cssValue = cssStyleDeclaration[cssProperty];
-                    if(cssValue == saveStyles[cssProperty]) continue;
-                    if(cssProperty == 'color') {
+                    if (cssValue == saveStyles[cssProperty]) continue;
+                    if (cssProperty == 'color') {
                         styleObj[cssProperty] = (color == 'rgb(255,255,255)' ? '#000' : color);
                         continue;
                     }
                     styleObj[cssProperty] = cssValue;
                 }
-                if(tagName == 'a') {
+                if (tagName == 'a') {
                     cloneEl.attr('href', el.href);
-                } else if(/^(ul|ol|li)$/.test(tagName)) {
+                } else if (/^(ul|ol|li)$/.test(tagName)) {
                     styleObj['list-style'] = cssStyleDeclaration['list-style'];
                 }
                 cloneEl.css(styleObj);
                 self.removeAttrs(cloneEl);
             }
-            if(nodeTagName == 'body') {
+            if (nodeTagName == 'body') {
                 return cloneNode[0].innerHTML;
             } else {
                 color = nodeCSSStyleDeclaration.color;
                 styleObj = {};
-                for(var cssProperty in saveStyles) {
+                for (var cssProperty in saveStyles) {
                     cssValue = nodeCSSStyleDeclaration[cssProperty];
-                    if(cssValue == saveStyles[cssProperty]) continue;
-                    if(/^(margin|float)$/.test(cssProperty)) continue;
-                    if(cssProperty == 'color') {
+                    if (cssValue == saveStyles[cssProperty]) continue;
+                    if (/^(margin|float)$/.test(cssProperty)) continue;
+                    if (cssProperty == 'color') {
                         styleObj[cssProperty] = (color == 'rgb(255,255,255)' ? '#000' : color);
                         continue;
                     }
@@ -660,9 +668,9 @@
                 }
                 cloneNode.css(styleObj);
                 self.removeAttrs(cloneNode);
-                if(/^(img)$/.test(nodeTagName)) {
+                if (/^(img)$/.test(nodeTagName)) {
                     var imgSrc = $(cloneNode[0]).attr('src');
-                    if(!/^http(s)?:\/\//.test(imgSrc)) {
+                    if (!/^http(s)?:\/\//.test(imgSrc)) {
                         $(cloneNode[0]).attr('src', window.location.protocol + '//' + window.location.host + '/' + imgSrc);
                     }
                 }
@@ -744,7 +752,7 @@
         },
         removeAttrs: function(node) {
             var removeAttrs = ['id', 'class', 'height', 'width'];
-            for(var i = 0, l = removeAttrs.length; i < l; i++) {
+            for (var i = 0, l = removeAttrs.length; i < l; i++) {
                 node.removeAttr(removeAttrs[i]);
             }
             return node;
@@ -757,7 +765,7 @@
         },
         sendContentToPopup: function(uid, content, add, title) {
             //cannot send data directly to popup page, so connect to background page first
-            if(add && !content) return; //add blank node, return;
+            if (add && !content) return; //add blank node, return;
             var port = chrome.extension.connect({
                 name: 'actionfrompopupinspecotr'
             });
@@ -779,17 +787,8 @@
             port.postMessage(notedata);
         }
     }
-    window.onerror = function(info) {
-        if(info == 'Uncaught ReferenceError: maikuClipper is not defined') {
-            var port = chrome.extension.connect({
-                name: 'maikuclipperisnotready'
-            });
-            port.postMessage();
-            return false;
-        }
-    }
+    maikuClipper.init();
     $(function() {
-        maikuClipper.init();
         maikuClipper.isLoadComplated = true;
     });
 })(jQuery);

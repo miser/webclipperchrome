@@ -24,7 +24,7 @@
                 initTaHeight = parseInt(noteContent.css('height')),
                 changeStep;
             $(document).mousemove(function(e) {
-                if(mouseDowned) {
+                if (mouseDowned) {
                     changeStep = e.pageY - startPageY;
                     noteContent.css('height', initTaHeight + changeStep);
                     parent.postMessage({
@@ -65,7 +65,7 @@
                 }, '*');
             });
             self.saveNote = function() {
-                if(self.isLogin) {
+                if (self.isLogin) {
                     noteContent.find('div[mkclip=true]').removeAttr('id').removeAttr('mkclip');
                     parent.postMessage({
                         name: 'savenotefrommaikupopup',
@@ -89,8 +89,8 @@
             self.autoExtractContent = mkbmUtils.find('.mkbm-auto-extract .mkbm-util-icon');
             mkbmUtils.delegate('.mkbm-util-item', 'click', function(e) {
                 var t = $(this);
-                if(t.is('.mkbm-auto-extract')) {
-                    if(self.autoExtractContent.is('.mkbm-enable')) {
+                if (t.is('.mkbm-auto-extract')) {
+                    if (self.autoExtractContent.is('.mkbm-enable')) {
                         self.autoExtractContent.removeClass('mkbm-enable').addClass('mkbm-disabled').attr('title', chrome.i18n.getMessage('AutoExtractContentDisabled'));
                         parent.postMessage({
                             name: 'disablemouseselectfrommaikupopup'
@@ -109,8 +109,8 @@
                             value: true
                         });
                     }
-                } else if(t.is('.mkbm-panel-position')) {
-                    if(t.data('panel-position') == 'bottom') {
+                } else if (t.is('.mkbm-panel-position')) {
+                    if (t.data('panel-position') == 'bottom') {
                         parent.postMessage({
                             name: 'gotopfrommaikupopup'
                         }, '*');
@@ -121,10 +121,10 @@
                         }, '*');
                         t.data('panel-position', 'bottom').find('.mkbm-util-icon').addClass('mkbm-down');
                     }
-                } else if(t.is('.mkbm-refresh-info')) {
+                } else if (t.is('.mkbm-refresh-info')) {
                     self.getUser(true);
-                } else if(t.is('.mkbm-mouse-select')) {
-                    if(t.data('isdisabled') == 'true') {
+                } else if (t.is('.mkbm-mouse-select')) {
+                    if (t.data('isdisabled') == 'true') {
                         parent.postMessage({
                             name: 'showinspectorfrommaikupopup'
                         }, '*');
@@ -146,43 +146,43 @@
         initExtensionRequest: function() {
             var self = this;
             chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
-                if(!sender || sender.id !== chrome.i18n.getMessage("@@extension_id")) return;
-                switch(request.name) {
-                case 'getuser':
-                    //first open popup, get user status
-                    self.getuserHandlerRequest(request.user, request.settings, request.refresh);
-                    break;
-                case 'userlogined':
-                    //user click the bottom left btn to login
-                    self.userloginedHandlerRequest(request.user, request.settings);
-                    break;
-                case 'userlogouted':
-                    //user click the bottom left btn to logout
-                    self.userlogoutedHandlerRequest();
-                    break;
-                case 'clicksavebtnafteruserloginedpopup':
-                    //user is not login and click save button, now callback method is called and user has logined
-                    self.userloginedHandlerRequest(request.user, request.settings);
-                    self.saveNote();
-                    break;
-                case 'actionfrompopupinspecotr':
-                    self.actionfrompopupinspecotrHandler(request.data);
-                    break;
-                default:
-                    break;
+                if (!sender || sender.id !== chrome.i18n.getMessage("@@extension_id")) return;
+                switch (request.name) {
+                    case 'getuser':
+                        //first open popup, get user status
+                        self.getuserHandlerRequest(request.user, request.settings, request.refresh);
+                        break;
+                    case 'userlogined':
+                        //user click the bottom left btn to login
+                        self.userloginedHandlerRequest(request.user, request.settings);
+                        break;
+                    case 'userlogouted':
+                        //user click the bottom left btn to logout
+                        self.userlogoutedHandlerRequest();
+                        break;
+                    case 'clicksavebtnafteruserloginedpopup':
+                        //user is not login and click save button, now callback method is called and user has logined
+                        self.userloginedHandlerRequest(request.user, request.settings);
+                        self.saveNote();
+                        break;
+                    case 'actionfrompopupinspecotr':
+                        self.actionfrompopupinspecotrHandler(request.data);
+                        break;
+                    default:
+                        break;
                 }
             });
         },
         getuserHandlerRequest: function(user, settings, refresh) {
             var self = this;
-            if(user) {
+            if (user) {
                 self.userloginedHandlerRequest(user, settings);
             } else {
                 self.userlogoutedHandlerRequest();
             }
-            if(refresh) return; //user refresh infomation, no need to create inspector again
+            if (refresh) return; //user refresh infomation, no need to create inspector again
             self.createInspector(settings.autoExtractContent);
-            if(settings.autoExtractContent == false) {
+            if (settings.autoExtractContent == false) {
                 self.autoExtractContent.removeClass('mkbm-enable').addClass('mkbm-disabled').attr('title', chrome.i18n.getMessage('AutoExtractContentDisabled'));
             }
         },
@@ -224,7 +224,7 @@
             self.displayNameWrap = self.displayName.parent();
             self.displayNameWrap.data('title', self.displayNameWrap.attr('title'));
             self.displayNameWrap.click(function(e) {
-                if(!self.isLogin) return false;
+                if (!self.isLogin) return false;
                 self.dropList.show();
                 $(document).one('click', function(e) {
                     self.dropList.hide();
@@ -249,14 +249,14 @@
                 displayName = '默认分类',
                 tStr = '<li class="mkbm-category-title">私人分类</li>',
                 genStrByCates = function(cates) {
-                    for(var i = 0, l = cates.length, cate; i < l; i++) {
+                    for (var i = 0, l = cates.length, cate; i < l; i++) {
                         cate = cates[i];
-                        if(cate.ParentID) {
+                        if (cate.ParentID) {
                             tStr += '<li class="mkbm-child-category" cateid="' + cate.NoteCategoryID + '">' + cate.DisplayName + '</li>';
                         } else {
                             tStr += '<li cateid="' + cate.NoteCategoryID + '">' + cate.DisplayName + '</li>';
                         }
-                        if(!foundCategory && (cate.NoteCategoryID == defaultCategory)) {
+                        if (!foundCategory && (cate.NoteCategoryID == defaultCategory)) {
                             displayName = cate.DisplayName;
                             foundCategory = defaultCategory;
                         }
@@ -310,10 +310,10 @@
         },
         actionfrompopupinspecotrHandler: function(data) {
             var self = this;
-            if(data.add) {
+            if (data.add) {
                 //add content
                 self.addNode($('<div mkclip="true" id="' + data.uid + '"></div>').append(data.content));
-                if(data.title) {
+                if (data.title) {
                     //for auto extract content
                     self.title.val(data.title);
                 }

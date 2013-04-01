@@ -13,6 +13,7 @@
 				return false;
 			});
 			$('#closebtn').click(function(e) {
+				console.log('close12');
 				parent.postMessage({
 					name: 'closefrommaikupopup'
 				}, '*');
@@ -22,5 +23,8 @@
 	}
 	$(function() {
 		maikuNotePopup.init();
+		parent.postMessage({
+            name: 'pageCompleted'
+        }, '*');
 	});
 })();
