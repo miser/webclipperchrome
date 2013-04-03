@@ -132,7 +132,11 @@ MkSyncNode.prototype.saveImages = function() {
         NotifyTips.showPersistent('uploadImages');
         var syncImages = new MkSyncImages(note, self.images, option);
         syncImages.upload(function(htmlImages, serverImages) {
-
+            if(htmlImages.length != serverImages.length){
+                console.log('htmlImages.length != serverImages.length');
+                console.log(htmlImages);
+                console.log(serverImages);
+            }
 
             for (var i = 0; i < serverImages.length; i++) {
                 var serverQueueItem = serverImages[i],
@@ -140,6 +144,7 @@ MkSyncNode.prototype.saveImages = function() {
                 for (var j = 0; j < serverQueueItem.length; j++) {
                     var serverImgData = serverQueueItem[j];
                     htmlQueueItem[j].image.src = serverImgData.Url;
+                    console.log(serverImgData.Url);
                 }
             }
             NotifyTips.showPersistent('uploadImagesSuccess');

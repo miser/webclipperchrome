@@ -160,14 +160,28 @@ var ReadyErrorNotify = (function() {
 
     var notification = null;
 
+    function sendMessage(key) {
+        key = key || 'ClipperNotReady';
+        var errorContent = chrome.i18n.getMessage(key);
+        var data = {
+            content: errorContent
+        }
+        chrome.extension.sendMessage({
+            name: 'readyerror',
+            data: data
+        });
+    }
     return {
-        show: function() {
+        show: function(key) {
             if (!notification) {
                 notification = webkitNotifications.createHTMLNotification('readyerror.html');
                 notification.addEventListener('close', function(e) {
                     notification = null;
                 });
                 notification.show();
+                setTimeout(function() {
+                    sendMessage(key)
+                }, 100);
             }
         },
         close: function() {

@@ -19,7 +19,7 @@ var MkSyncImage = function(imgEl) {
                 MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
                     callback(self, file)
                 }) //MKFileSystem.create todo...
-            } else if (this.status == 404) {
+            } else if (this.status != 404) {
                 errorFn && errorFn(self, arguments);
             } else {
                 // error404 && error404(self, arguments)

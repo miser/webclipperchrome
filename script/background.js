@@ -28,9 +28,28 @@
             });
         },
         createPopup: function() {
+            var getCurrentWindowCallback = function(win) {
+                var getSelectedTabCallback = function(tab) {
+                    var match, scheme, banned;
+                    if (tab.url) { // Won't be set in Safari for file:// urls.
+                        match = tab.url.match(/^(.*?):/);
+                        scheme = match[1].toLowerCase();
+                        if (scheme != "http" && scheme != "https") banned = true;
+                    } else {
+                        banned = true;
+                    }
+                    if (banned) {
+                        ReadyErrorNotify.show('notClipPageInfo');
+                    }
+                }
+
+                chrome.tabs.getSelected(win.id, getSelectedTabCallback);
+            }
+            chrome.windows.getLastFocused(getCurrentWindowCallback);
             try {
+                console.log('createPopup');
                 chrome.tabs.executeScript(null, {
-                    code: "try{maikuClipper.createPopup();}catch(e){var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
+                    code: "try{console.log('maikuClipper try');maikuClipper.createPopup();}catch(e){console.log(e);var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
                 });
             } catch (e) {
                 console.log(e)
@@ -554,9 +573,9 @@
         },
         maikuclipperisnotreadyHandlerConnect: function(port) {
             var self = this;
-            port.onMessage.addListener(function(msg) {
-                ReadyErrorNotify.show();
-                // self.notifyHTML(chrome.i18n.getMessage('ClipperNotReady'));
+            port.onMessage.addListener(function(data) {
+                data = data || {};
+                ReadyErrorNotify.show(data.key);
             });
         },
         actionfrompopupinspecotrHandler: function(port) {

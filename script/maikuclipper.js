@@ -190,6 +190,9 @@
             });
         },
         createMkClipWrap: function(zIndex, height) {
+            if ($(document.body).is('frameset')) {
+                return null;
+            }
             var self = this;
             if (!self.closePopup) {
                 self.closePopup = function() {
@@ -207,6 +210,7 @@
             var iframe = $('<iframe frameborder="0" style="width:100%;height:100%;"></iframe>').appendTo(el),
                 iframeWin = iframe[0].contentWindow,
                 iframeDoc = iframe[0].contentDocument || iframeWin.document;
+
             return {
                 wrap: el,
                 iframe: iframe
@@ -214,12 +218,14 @@
         },
         createLoadingEl: function(zIndex) {
             var obj = this.createMkClipWrap(zIndex, 150);
+            if (obj == null) return null;
             obj.iframe[0].src = chrome.extension.getURL('loading.html');
             return obj.wrap;
         },
         createClipEl: function(zIndex) {
             var self = this;
             var obj = this.createMkClipWrap(zIndex, 450);
+            if (obj == null) return null;
             obj.iframe[0].src = chrome.extension.getURL('popup.html');
             self.initDivHeight = parseInt(obj.wrap.css('height'));
             var judgeHeight = function(h) {
@@ -251,32 +257,42 @@
             return obj.wrap;
         },
         createPopup: function() {
+            console.log('createPopup');
             var self = this;
             if (self.isCreatedPopup) return;
             self.popupZIndex = 20120726;
             self.isCreatedPopup = true;
-
-            var loadingEl, ClipEl;
-            console.log('createPopup');
+            var errorMessage = "page isn't be support",
+                loadingEl, ClipEl;
 
             function showPage() {
                 if (self.isLoadComplated == true) {
                     if (ClipEl) return true;
                     if (loadingEl) loadingEl.remove();
                     self.popupInstance = ClipEl = self.createClipEl(self.popupZIndex);
+                    if (ClipEl == null) throw Error(errorMessage);
                     return true;
                 } else {
                     if (loadingEl) return false;
                     self.popupInstance = loadingEl = self.createLoadingEl(self.popupZIndex);
+                    if (loadingEl == null) throw Error(errorMessage);
                     return false;
                 }
             }
-            showPage();
-            var handler = setInterval(function() {
-                if (showPage()) {
-                    clearInterval(handler);
+            try {
+                showPage();
+
+                var handler = setInterval(function() {
+                    if (showPage()) {
+                        clearInterval(handler);
+                    }
+                }, 500);
+            } catch (e) {
+                self.isCreatedPopup = false;
+                if (e.message == errorMessage) {
+                    self.tipsReadyError();
                 }
-            }, 500);
+            }
         },
         addWindowEventListener: function() {
             var self = this;
@@ -317,10 +333,7 @@
                         self.mask && self.mask.hide();
                         break;
                     case 'pageCompleted':
-                        console.log('xx');
                         self.isLoadComplated = true;
-                        console.log(self);
-                        console.log(self.isLoadComplated);
                         break;
                     default:
                         break;
@@ -388,7 +401,10 @@
                 'z-index': self.popupZIndex - 1,
                 background: 'transparent'
             }).append(markInner).append(markExpandor).append(markClose);
-            self.markContainer = $('<div mkclip="true"></div>').appendTo(body).append(self.cover).append(self.mask);
+            //有些网页会把div强制为position:relative 导致选择区显示出错
+            //手动将position强制为默认值
+            //http://www.smashingmagazine.com/2013/02/28/desktop-wallpaper-calendar-march-2013/
+            self.markContainer = $('<div mkclip="true" style="position:static"></div>').appendTo(body).append(self.cover).append(self.mask);
             self.markedElements = {}; //save all marked page element
             self.marks = {}; //save all marks
             self.markCount = 0;
@@ -785,6 +801,15 @@
             self.closePopup();
             notedata.sourceurl = location.href;
             port.postMessage(notedata);
+        },
+        tipsReadyError: function() {
+            var port = chrome.extension.connect({
+                name: 'maikuclipperisnotready'
+            });
+            var data = {
+                'key': 'notClipPageInfo'
+            }
+            port.postMessage(data);
         }
     }
     maikuClipper.init();
