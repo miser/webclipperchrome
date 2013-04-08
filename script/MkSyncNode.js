@@ -27,7 +27,6 @@ MkSyncNode.prototype.init = function() {
         option = self.option,
         content = self.note.notecontent;
     this.images = [];
-    console.log('this.images = []');
     NotifyTips.showPersistent('noteInit', self.note.title);
     self.post(function(data) {
         self.note.noteid = data.Note.NoteID;

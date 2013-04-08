@@ -107,11 +107,15 @@ var NotifyTips = function() {
         showPersistent: function() {
             if (!notification) create();
             persistent = init(arguments);
+            //需要给notification.html 第一次加载的时候调用
+            this.notificationData = persistent.data;
             showTipsPersistent();
         },
         showTemporary: function() {
             if (!notification) create();
             temporary = init(arguments);
+            //需要给notification.html 第一次加载的时候调用
+            this.notificationData = temporary.data;
             showTipsTemporary();
         },
         clear: function() {
@@ -159,30 +163,22 @@ var NotifyTips = function() {
 var ReadyErrorNotify = (function() {
 
     var notification = null;
-
-    function sendMessage(key) {
-        key = key || 'ClipperNotReady';
-        var errorContent = chrome.i18n.getMessage(key);
-        var data = {
-            content: errorContent
-        }
-        chrome.extension.sendMessage({
-            name: 'readyerror',
-            data: data
-        });
-    }
     return {
         show: function(key) {
-            if (!notification) {
-                notification = webkitNotifications.createHTMLNotification('readyerror.html');
-                notification.addEventListener('close', function(e) {
-                    notification = null;
-                });
-                notification.show();
-                setTimeout(function() {
-                    sendMessage(key)
-                }, 100);
+            if(notification) return;
+            
+            notification = webkitNotifications.createHTMLNotification('readyerror.html');
+            notification.addEventListener('close', function(e) {
+                notification = null;
+            });
+            notification.show();
+            key = key || 'ClipperNotReady';
+            var errorContent = chrome.i18n.getMessage(key);
+            var data = {
+                content: errorContent
             }
+            //需要给notification.html 第一次加载的时候调用
+            this.notificationData = data;
         },
         close: function() {
             if (notification) notification.close();

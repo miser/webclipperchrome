@@ -36,7 +36,7 @@
             for (var i = 0, img, l = imgs.length, src; i < l; i++) {
                 img = imgs[i];
                 src = img.src;
-                if (!isToSave(src)) continue;
+                // if (!isToSave(src)) continue; //有些图片没有扩展名
                 if (filteredImg[src]) continue;
                 filteredImg[src] = 1;
                 filteredImgTitles.push(img.title || img.alt || '');
@@ -112,7 +112,7 @@
                 content = false;
             } else if (commonAncestorContainer.nodeType === 3) {
                 content = $(commonAncestorContainer).text();
-                title = content;
+                title = document.title; //content
             } else if (commonAncestorContainer.nodeType === 1) {
                 var selectedHTML = self.getSelectedHTML();
                 var tempNode = $('<div>', {
@@ -120,7 +120,7 @@
                 }).insertAfter($(commonAncestorContainer));
                 self.getHTMLByNode(tempNode);
                 var html = tempNode.html();
-                title = tempNode.text();
+                title = document.title;//tempNode.text();
                 tempNode.remove();
                 content = html;
             }

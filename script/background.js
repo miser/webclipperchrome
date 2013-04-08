@@ -47,9 +47,8 @@
             }
             chrome.windows.getLastFocused(getCurrentWindowCallback);
             try {
-                console.log('createPopup');
                 chrome.tabs.executeScript(null, {
-                    code: "try{console.log('maikuClipper try');maikuClipper.createPopup();}catch(e){console.log(e);var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
+                    code: "try{maikuClipper.createPopup();}catch(e){console.log(e);var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
                 });
             } catch (e) {
                 console.log(e)
@@ -77,7 +76,7 @@
             var self = this;
             chrome.contextMenus.create({
                 contexts: ['selection'],
-                title: chrome.i18n.getMessage("clipSelectionContextMenu"),
+                title: chrome.i18n.getMessage("clipSelectionContextMenu"), //剪辑选择内容
                 onclick: function(info, tab) {
                     chrome.tabs.executeScript(tab.id, {
                         code: "maikuClipper.getSelectedContent();"
@@ -91,12 +90,13 @@
                 contexts: ['image'],
                 title: chrome.i18n.getMessage('clipImageContextMenu'),
                 onclick: function(info, tab) {
-                    self.saveImgs({
-                        imgs: [info.srcUrl],
+                    var note = {
                         title: tab.title,
-                        imgTitles: [tab.title],
-                        sourceurl: tab.url
-                    });
+                        sourceurl: tab.url,
+                        notecontent: '<img src="' + info.srcUrl + '" alt="' + tab.title + '" title="' + tab.title + '" />'
+                    }
+                    MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                    MKSyncTaskQueue.start();
                 }
             });
             chrome.contextMenus.create({
@@ -112,7 +112,6 @@
                 contexts: ['page'],
                 title: chrome.i18n.getMessage('clipPageContextMenu'),
                 onclick: function(info, tab) {
-                    self.notifyHTML(chrome.i18n.getMessage('IsClippingPage'), false);
                     chrome.tabs.executeScript(tab.id, {
                         code: "maikuClipper.getPageContent();"
                     });
@@ -145,8 +144,15 @@
                 contexts: ['page'],
                 title: chrome.i18n.getMessage('clipPageUrlContextMenu'),
                 onclick: function(info, tab) {
-                    var content = '<img src="' + tab.favIconUrl + '" title="' + tab.title + '" alt="' + tab.title + '"/>' + '<a href="' + tab.url + '" title="' + tab.title + '">' + tab.url + '</a>';
-                    self.saveNote(tab.title, tab.url, content);
+                    // var content = '<img src="' + tab.favIconUrl + '" title="' + tab.title + '" alt="' + tab.title + '"/>' + '<a href="' + tab.url + '" title="' + tab.title + '">' + tab.url + '</a>';
+                    // self.saveNote(tab.title, tab.url, content);
+                     var note = {
+                        title: tab.title,
+                        sourceurl: tab.url,
+                        notecontent: '<img src="' + tab.favIconUrl + '" title="' + tab.title + '" alt="' + tab.title + '"/>' + '<a href="' + tab.url + '" title="' + tab.title + '">' + tab.url + '</a>'
+                    }
+                    MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                    MKSyncTaskQueue.start();
                 }
             });
             chrome.contextMenus.create({
@@ -492,14 +498,32 @@
         allimagesHandlerConnect: function(port) {
             var self = this;
             port.onMessage.addListener(function(msg) {
-                self.saveImgs(msg);
+                var imgs = msg.imgs,
+                    titles = msg.imgTitles,
+                    content = '';
+                for (var i = 0; i < imgs.length; i++) {
+                    content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
+                }
+                var note = {
+                    title: msg.title,
+                    sourceurl: msg.sourceurl,
+                    notecontent: content
+                }
+                MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                MKSyncTaskQueue.start();
             });
         },
         linkHandlerConnect: function(port) {
             var self = this;
             port.onMessage.addListener(function(msg) {
                 var content = '<a href="' + msg.linkUrl + '" title="' + msg.title + '">' + msg.text + '</a>';
-                self.saveNote(msg.title, msg.sourceurl, content);
+                var note = {
+                    title: msg.title,
+                    sourceurl: msg.sourceurl,
+                    notecontent: content
+                }
+                MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                MKSyncTaskQueue.start();
             });
         },
         alllinksHandlerConnect: function(port) {
@@ -511,58 +535,28 @@
                     link = links[i];
                     content += '<a href="' + link.linkUrl + '" title="' + link.title + '">' + link.text + '</a><br />';
                 }
-                self.saveNote(msg.title, msg.sourceurl, content);
+                var note = {
+                    title: msg.title,
+                    sourceurl: msg.sourceurl,
+                    notecontent: content
+                }
+                MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                MKSyncTaskQueue.start();
+                // self.saveNote(msg.title, msg.sourceurl, content);
             });
         },
         getpagecontentConnect: function(port) {
             var self = this;
             port.onMessage.addListener(function(msg) {
-                if (maikuNoteOptions.serializeImg) {
-                    var content = $('<div></div>').append(msg.content),
-                        imgs = content.find('img'),
-                        needReplaceImgs = [],
-                        filteredImg = {},
-                        filteredImgTitles = [],
-                        isToSave = function(url) {
-                            var suffix = url.substr(url.length - 4);
-                            return /^\.(gif|jpg|png)$/.test(suffix);
-                        }
-                    if (imgs.length === 0) {
-                        self.saveNote(msg.title, msg.sourceurl, msg.content);
-                        return;
-                    }
-                    for (var i = 0, img, l = imgs.length, src; i < l; i++) {
-                        img = imgs[i];
-                        src = img.src;
-                        if (!isToSave(src)) continue;
-                        if (filteredImg[src]) continue;
-                        filteredImg[src] = 1;
-                        filteredImgTitles.push(img.title || img.alt || '');
-                        needReplaceImgs.push(img);
-                    }
-                    self.saveImgs({
-                        imgs: Object.keys(filteredImg),
-                        imgTitles: filteredImgTitles,
-                        title: msg.title,
-                        sourceurl: msg.sourceurl
-                    }, function(uploadedImageData, serializeSucceedImgIndexByOrder, noteId) {
-                        var realIndex, d;
-                        for (var i = 0, l = needReplaceImgs.length; i < l; i++) {
-                            realIndex = serializeSucceedImgIndexByOrder[i];
-                            if (realIndex) {
-                                d = uploadedImageData[realIndex];
-                                needReplaceImgs[i].src = d.Url;
-                                delete serializeSucceedImgIndexByOrder[i];
-                            }
-                        }
-                        self.saveNote(msg.title, msg.sourceurl, content.html(), '', '', noteId);
-                    }, function() {
-                        //all images upload failed or serialize failed, just save the page
-                        self.saveNote(msg.title, msg.sourceurl, msg.content);
-                    });
-                } else {
-                    self.saveNote(msg.title, msg.sourceurl, msg.content);
+                var note = {
+                    title: msg.title,
+                    sourceurl: msg.sourceurl,
+                    notecontent: msg.content,
+                    tags: msg.tags,
+                    categoryid: msg.categoryid
                 }
+                MKSyncTaskQueue.add(new MKSyncTask(note, self))
+                MKSyncTaskQueue.start();
             });
         },
         maikuclipperisreadyHandlerConnect: function(port) {
