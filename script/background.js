@@ -202,6 +202,7 @@
             } else {
                 NotifyTips.showPersistent('NotLogin');
                 self.checkLogin(function() {
+                    console.log('insureLogin');
                     callback && callback();
                 });
             }
@@ -348,8 +349,6 @@
             });
         },
         checkLogin: function(callback) {
-            console.log('checkLogin checkLogin');
-            console.log(callback);
             var self = this;
             self.getUser(function(user) {
                 if (!user) {
@@ -363,17 +362,11 @@
                     }, function(win) {
                         var tabId = win.tabs[0].id;
                         chrome.tabs.onUpdated.addListener(function HandlerConnect(id, info) {
-                            console.log('chrome.tabs.onUpdated.addListener');
                             if (info.status == 'loading' && id == tabId) {
                                 self.getUser(function(user) {
-                                    console.log('****')
-                                    try {
-                                        if (user) {
-                                            chrome.tabs.onUpdated.removeListener(HandlerConnect);
-                                            chrome.windows.remove(win.id, callback(user));
-                                        }
-                                    } catch (e) {
-                                        console.log(e);
+                                    if (user) {
+                                        chrome.tabs.onUpdated.removeListener(HandlerConnect);
+                                        chrome.windows.remove(win.id, callback(user));
                                     }
                                 });
                             }
@@ -593,7 +586,6 @@
         },
         getUser: function(callback) {
             var self = this;
-            console.log(self.userData);
             if (self.userData) {
                 callback(self.userData);
                 return;
