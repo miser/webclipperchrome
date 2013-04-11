@@ -27,7 +27,7 @@ describe('MKSyncTaskQueue', function() {
                 tags: 'test_tag'
             }
             var state = new MKEvent();
-            var mkNote = new MkSyncNode(note, null, state);
+            var mkNote = new MkSyncNote(note, null, state);
 
             MKSyncTaskQueue.addError(mkNote);
 
@@ -53,8 +53,8 @@ describe('MKSyncTaskQueue', function() {
             }
             var state1 = new MKEvent();
             var state2 = new MKEvent();
-            var mkNote1 = new MkSyncNode(note1, null, state1);
-            var mkNote2 = new MkSyncNode(note2, null, state2);
+            var mkNote1 = new MkSyncNote(note1, null, state1);
+            var mkNote2 = new MkSyncNote(note2, null, state2);
 
             MKSyncTaskQueue.addError(mkNote1);
             MKSyncTaskQueue.addError(mkNote2);

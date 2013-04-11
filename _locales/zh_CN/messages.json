@@ -228,5 +228,14 @@
    },
    "notClipPageInfo":{
      "message":  "\u65E0\u6CD5\u526A\u96C6\u8BE5\u9875\u4FE1\u606F" 
+   },
+   "noteSaveAsMHTML":{
+     "message": "正在生成MHTML..." 
+   },
+   "noteMHTMLSuccess":{
+     "message": "生成MHTML成功" 
+   },
+   "noteMHTMLFail":{
+     "message": "生成MHTML失败" 
    }
 }

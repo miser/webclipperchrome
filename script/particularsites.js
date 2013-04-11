@@ -10,9 +10,9 @@
 					case 'link.weibo':
 						self.weiboLinkHandler(port);
 						break;
-					case 'review.douban':
-						self.doubanReviewHandler(port);
-						break;
+					// case 'review.douban':
+					// 	self.doubanReviewHandler(port);
+					// 	break;
                     default:
 						break;
                 }
@@ -22,31 +22,40 @@
 			var that = maikuNote;
 			port.onMessage.addListener(function(msg){
                 if(msg.error){
-					that.notify('选择微博的时间链接才能剪辑该条微博。');
+					// that.notify('选择微博的时间链接才能剪辑该条微博。');
 				}else{
 					var content = msg.content,
                     tag = '新浪微博';
-                    if(msg.picurl){
-                        if(maikuNoteOptions.serializeImg){
-                            that.saveImgs({
-                                imgs: [msg.picurl],
-                                title: msg.title,
-                                imgTitles: [''],
-                                tags: tag,
-                                sourceurl: msg.sourceurl
-                            }, function(data, serializeSucceedImgIndexByOrder, noteId){
-                                content += '<br /><img src="' + data[0].ExternalUrl + '">';
-                                that.saveNote(msg.title, msg.sourceurl, content, tag, '', noteId);
-                            }, function(){
-                                that.saveNote(msg.title, msg.sourceurl, content, tag);
-                            });
-                        }else{
-                            content += '<br /><img src="' + msg.picurl + '">';
-                            that.saveNote(msg.title, msg.sourceurl, content, tag);
-                        }
-                    }else{
-                        that.saveNote(msg.title, msg.sourceurl, content, tag);
+                    var note = {
+                    	title: msg.title,
+	                    sourceurl: msg.sourceurl,
+	                    notecontent: content,
+	                    tags: tag
                     }
+                    that.syncNote(note);
+                    // if(msg.picurl){
+
+                    //     // if(maikuNoteOptions.serializeImg){
+                    //     //     that.saveImgs({
+                    //     //         imgs: [msg.picurl],
+                    //     //         title: msg.title,
+                    //     //         imgTitles: [''],
+                    //     //         tags: tag,
+                    //     //         sourceurl: msg.sourceurl
+                    //     //     }, function(data, serializeSucceedImgIndexByOrder, noteId){
+                    //     //         content += '<br /><img src="' + data[0].ExternalUrl + '">';
+                    //     //         that.saveNote(msg.title, msg.sourceurl, content, tag, '', noteId);
+                    //     //     }, function(){
+                    //     //         that.saveNote(msg.title, msg.sourceurl, content, tag);
+                    //     //     });
+                    //     // }else{
+                    //     //     content += '<br /><img src="' + msg.picurl + '">';
+                    //     //     that.saveNote(msg.title, msg.sourceurl, content, tag);
+                    //     // }
+                    // }else{
+
+                    //     that.saveNote(msg.title, msg.sourceurl, content, tag);
+                    // }
 				}
             });
 		},
@@ -62,24 +71,30 @@
 				});
 			});
 		},
-		doubanReviewHandler: function(port){
-			var that = maikuNote;
-			port.onMessage.addListener(function(msg){
-				that.saveNote(msg.title, msg.sourceurl, msg.content, '豆瓣评论');
-            });
-		},
-		douban: function(){
-			var self = this;
-			window.maikuNote.initContextMenus(function(){
-				chrome.contextMenus.create({
-					contexts: ['page'],
-					title: chrome.i18n.getMessage('clipReviewContextMenuDouban'),
-					onclick: function(info, tab){
-						chrome.tabs.executeScript(null, {code: "maikuClipper.getPageReiveDouban();"});
-					}
-				});
-			});
-		}
+		// doubanReviewHandler: function(port){
+		// 	var that = maikuNote;
+		// 	port.onMessage.addListener(function(msg){
+		// 		var note = {
+  //                   title: msg.title,
+  //                   sourceurl: msg.sourceurl,
+  //                   notecontent: msg.content,
+  //                   tags: '豆瓣评论'
+  //               }
+  //               that.syncNote(note);
+  //           });
+		// },
+		// douban: function(){
+		// 	var self = this;
+		// 	window.maikuNote.initContextMenus(function(){
+		// 		chrome.contextMenus.create({
+		// 			contexts: ['page'],
+		// 			title: chrome.i18n.getMessage('clipReviewContextMenuDouban'),
+		// 			onclick: function(info, tab){
+		// 				chrome.tabs.executeScript(null, {code: "maikuClipper.getPageReiveDouban();"});
+		// 			}
+		// 		});
+		// 	});
+		// }
 	}
 	window.maikuNoteUtil = {
 		createParticularContextMenu: function(host){
@@ -90,11 +105,11 @@
 				case 'e.weibo.com':
 					contextMenuForSites.weibo();
 					break;
-				case 'movie.douban.com':
-				case 'book.douban.com':
-				case 'music.douban.com':
-					contextMenuForSites.douban();
-					break;
+				// case 'movie.douban.com':
+				// case 'book.douban.com':
+				// case 'music.douban.com':
+				// 	contextMenuForSites.douban();
+				// 	break;
 				default:
 					window.maikuNote.initContextMenus();
 					break;

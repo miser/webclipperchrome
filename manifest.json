@@ -1,6 +1,6 @@
 {
    "background": {
-      "scripts": ["script/util.js","script/lib/jquery-1.7.2.min.js", "script/lib/underscore.js","script/lib/backbone.js", "script/settings.js", "script/particularsites.js","script/MKEvent.js","script/NotifyTips.js", "script/MkSyncNode.js", "script/MkSyncImage.js", "script/MKSyncTask.js","script/MkFileSystem.js","script/MKSyncTaskQueue.js", "script/background.js"]
+      "scripts": ["script/util.js", "script/lib/jquery-1.7.2.min.js", "script/lib/underscore.js", "script/lib/backbone.js", "script/settings.js", "script/particularsites.js", "script/MKEvent.js", "script/NotifyTips.js", "script/MkSyncNote.js", "script/MkSyncImage.js", "script/MKSyncTask.js", "script/MkFileSystem.js", "script/MKSyncTaskQueue.js", "script/background.js"]
    },
    "browser_action": {
       "default_icon": "images/icons/19x19.png",
@@ -9,9 +9,6 @@
    "content_scripts": [{
       "js": ["script/lib/jquery-1.7.2.min.js", "script/maikuclipper.js", "script/lib/extract-content.js"],
       "matches": ["http://*/*", "https://*/*"]
-   }, {
-      "js": ["script/sites/douban.com.review.js"],
-      "matches": ["http://*.douban.com/review/*"]
    }, {
       "js": ["script/sites/weibo.com.js"],
       "matches": ["http://weibo.com/*", "http://*.weibo.com/*"]
@@ -28,7 +25,7 @@
    "manifest_version": 2,
    "name": "__MSG_ExtensionName__",
    "options_page": "options.html",
-   "permissions": ["tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*","unlimitedStorage"],
+   "permissions": ["tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*", "unlimitedStorage"],
    "version": "3.3.3",
    "web_accessible_resources": ["popup.html", "loading.html"],
    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"

@@ -65,8 +65,10 @@ var MKSyncTaskQueue = function() {
 
 	return {
 		add: function(task) {
-			NotifyTips.showTemporary('syncTaskAdd', task.note.note.title);
-			queue.push(task)
+			maikuNote.insureLogin(function() {
+				queue.push(task);
+				NotifyTips.showTemporary('syncTaskAdd', task.note.note.title);
+			});
 		},
 		start: function() {
 			if (!endCurrentTask()) return;

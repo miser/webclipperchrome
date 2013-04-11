@@ -1,4 +1,4 @@
-var MkSyncNode = function(noteData, option, stateEvent) {
+var MkSyncNote = function(noteData, option, stateEvent) {
     var defaultData = {
         title: '[未命名笔记]',
         sourceurl: '',
@@ -22,28 +22,30 @@ var MkSyncNode = function(noteData, option, stateEvent) {
         this.syncState = stateEvent;
     }
 }
-MkSyncNode.prototype.init = function() {
+MkSyncNote.prototype.init = function() {
+    console.log('noteInit');
     var self = this,
         option = self.option,
         content = self.note.notecontent;
     this.images = [];
     NotifyTips.showPersistent('noteInit', self.note.title);
     self.post(function(data) {
+        console.log('note.init.success');
         self.note.noteid = data.Note.NoteID;
         self.note.notecontent = content;
         NotifyTips.showPersistent('noteInitSuccess', self.note.title);
-        self.syncState.setState('note.init.success', arguments)
+        self.syncState.setState('note.init.success', arguments);
     }, function() {
         NotifyTips.showPersistent('noteInitFail', self.note.title);
-        self.syncState.setState('note.init.fail', arguments)
+        self.syncState.setState('note.init.fail', arguments);
     })
 }
-MkSyncNode.prototype.saveImage = function() {
+MkSyncNote.prototype.saveImage = function() {
     var self = this;
     NotifyTips.showPersistent('saveImages', self.note.title);
     self.saveImages();
 }
-MkSyncNode.prototype.saveContent = function() {
+MkSyncNote.prototype.saveContent = function() {
     var self = this;
     self.note.notecontent = self.noteEl.html();
     self.post(function(data) {
@@ -52,7 +54,7 @@ MkSyncNode.prototype.saveContent = function() {
         self.syncState.setState('save.saveContent.fail', arguments)
     })
 }
-MkSyncNode.prototype.post = function(successCallback, failCallback) {
+MkSyncNote.prototype.post = function(successCallback, failCallback) {
     var self = this,
         option = self.option,
         images = self.images,
@@ -65,7 +67,6 @@ MkSyncNode.prototype.post = function(successCallback, failCallback) {
         url: option.baseUrl + '/note/save',
         data: JSON.stringify(note),
         success: function(data) {
-            console.log(data);
             if (data.error) {
                 if (data.error == 'notlogin') {
                     NotifyTips.showPersistent('syncTaskAdd');
@@ -82,12 +83,10 @@ MkSyncNode.prototype.post = function(successCallback, failCallback) {
         }
     });
 }
-MkSyncNode.prototype.delete = function() {
+MkSyncNote.prototype.delete = function() {
     var self = this,
         option = self.option,
         noteid = self.note.noteid;
-    // NotifyTips.showPersistent('noteDelete', self.note.title);
-    console.log('delete');
     $.ajax({
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -105,7 +104,7 @@ MkSyncNode.prototype.delete = function() {
         }
     });
 }
-MkSyncNode.prototype.saveImages = function() {
+MkSyncNote.prototype.saveImages = function() {
     var self = this,
         option = self.option,
         note = self.note;
@@ -113,7 +112,6 @@ MkSyncNode.prototype.saveImages = function() {
         filteredImg = [];
     //maikuNoteOptions.serializeImg 要修改 改成传入参数而不是全局的
     if (maikuNoteOptions.serializeImg) {
-        console.log('imgs.length:' + imgs.length);
         for (var i = 0; i < imgs.length; i++) {
             var img = imgs[i];
             if (img.src.indexOf('data:image/') >= 0) continue; //有些插件在页面上有图
@@ -125,31 +123,21 @@ MkSyncNode.prototype.saveImages = function() {
             self.images.push(new MkSyncImage(img));
         }
     }
-    console.log('self.images.length:' + self.images.length);
-
     if (self.images.length) {
         NotifyTips.showPersistent('uploadImages');
         var syncImages = new MkSyncImages(note, self.images, option);
         syncImages.upload(function(htmlImages, serverImages) {
-            if(htmlImages.length != serverImages.length){
-                console.log('htmlImages.length != serverImages.length');
-                console.log(htmlImages);
-                console.log(serverImages);
-            }
-
             for (var i = 0; i < serverImages.length; i++) {
                 var serverQueueItem = serverImages[i],
                     htmlQueueItem = htmlImages[i];
                 for (var j = 0; j < serverQueueItem.length; j++) {
                     var serverImgData = serverQueueItem[j];
                     htmlQueueItem[j].image.src = serverImgData.Url;
-                    console.log(serverImgData.Url);
                 }
             }
             NotifyTips.showPersistent('uploadImagesSuccess');
             self.syncState.setState('save.images.success')
         }, function() {
-            console.log('uploadImagesFail')
             NotifyTips.showPersistent('uploadImagesFail');
             self.syncState.setState('save.images.fail', arguments)
         })
@@ -157,4 +145,33 @@ MkSyncNode.prototype.saveImages = function() {
         //不需要保存图片只要将状态设置为图片已经完成上传，继续后续事件
         self.syncState.setState('save.images.success')
     }
+}
+MkSyncNote.prototype.saveMHTML = function(tab) {
+    var self = this;
+    NotifyTips.showPersistent('noteSaveAsMHTML', self.note.title);
+    chrome.pageCapture.saveAsMHTML({
+        tabId: tab.id
+    }, function(mhtmlBlob) {
+        MkFileSystem.create(mhtmlBlob.size, self.note.title + '.mhtml', mhtmlBlob, function(file) {
+            var formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', 'Attachment');
+            formData.append('id', self.note.noteid);
+            $.ajax({
+                url: self.option.baseUrl + "/attachment/save",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    NotifyTips.showPersistent('noteMHTMLSuccess', self.note.title);
+                    self.syncState.setState('note.mhtml.success', arguments);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    NotifyTips.showPersistent('noteMHTMLFail', self.note.title);
+                    self.syncState.setState('note.mhtml.fail', arguments);
+                }
+            });
+        })
+    });
 }

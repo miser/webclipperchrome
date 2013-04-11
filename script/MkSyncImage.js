@@ -18,7 +18,7 @@ MkSyncImage.prototype.download = function(callback, errorFn, error404) {
                 fileName = parts[parts.length - 1];
             MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
                 callback(self, file)
-            }) //MKFileSystem.create todo...
+            })
         } else if (this.status != 404) {
             errorFn && errorFn(self, arguments);
         } else {

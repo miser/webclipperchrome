@@ -21,7 +21,7 @@
             var self = this;
             chrome.browserAction.onClicked.addListener(function(tab) {
                 if (!chrome.extension.sendMessage) {
-                    self.notifyHTML(chrome.i18n.getMessage("BrowserTooLower"), 30000);
+                    ReadyErrorNotify.show('BrowserTooLower', 30000);
                     return;
                 }
                 self.createPopup();
@@ -95,8 +95,7 @@
                         sourceurl: tab.url,
                         notecontent: '<img src="' + info.srcUrl + '" alt="' + tab.title + '" title="' + tab.title + '" />'
                     }
-                    MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                    MKSyncTaskQueue.start();
+                    self.syncNote(note);
                 }
             });
             chrome.contextMenus.create({
@@ -146,58 +145,26 @@
                 onclick: function(info, tab) {
                     // var content = '<img src="' + tab.favIconUrl + '" title="' + tab.title + '" alt="' + tab.title + '"/>' + '<a href="' + tab.url + '" title="' + tab.title + '">' + tab.url + '</a>';
                     // self.saveNote(tab.title, tab.url, content);
-                     var note = {
+                    var note = {
                         title: tab.title,
                         sourceurl: tab.url,
                         notecontent: '<img src="' + tab.favIconUrl + '" title="' + tab.title + '" alt="' + tab.title + '"/>' + '<a href="' + tab.url + '" title="' + tab.title + '">' + tab.url + '</a>'
                     }
-                    MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                    MKSyncTaskQueue.start();
+                    self.syncNote(note);
                 }
             });
             chrome.contextMenus.create({
                 contexts: ['page'],
                 title: chrome.i18n.getMessage('pageCaptureContextMenu'),
                 onclick: function(info, tab) {
-                    self.insureLogin(function() {
-                        chrome.pageCapture.saveAsMHTML({
-                            tabId: tab.id
-                        }, function(mhtmlBlob) {
-                            self.notifyHTML(chrome.i18n.getMessage('IsClippingPage'), false);
-                            window.requestFileSystem(TEMPORARY, mhtmlBlob.size, function(fs) {
-                                self.writeBlobAndSendFile(fs, mhtmlBlob, tab.title + '.mhtml', function(file) {
-                                    self.notifyHTML(chrome.i18n.getMessage('pageCaptureUploading'));
-                                    var formData = new FormData();
-                                    formData.append('file', file);
-                                    formData.append('type', 'Attachment');
-                                    $.ajax({
-                                        url: self.baseUrl + "/attachment/save/",
-                                        type: "POST",
-                                        data: formData,
-                                        processData: false,
-                                        contentType: false,
-                                        success: function(data) {
-                                            if (data.error) {
-                                                //todo: server error, pending note...
-                                                console.log('Internal error: ')
-                                                console.log(data.error)
-                                                return;
-                                            }
-                                            var d = data.Attachment;
-                                            self.removeFile(d.FileName, d.FileSize);
-                                            self.saveNote(tab.title, tab.url, '', '', '', d.NoteID);
-                                        },
-                                        error: function(jqXHR, textStatus, errorThrown) {
-                                            console.log('xhr error: ')
-                                            console.log(textStatus)
-                                        }
-                                    });
-
-                                }, function() {
-                                    self.notifyHTML(chrome.i18n.getMessage('pageCaptureFailed'));
-                                });
-                            }, self.onFileError);
-                        });
+                    var note = {
+                        title: tab.title,
+                        sourceurl: tab.url,
+                        notecontent: ''
+                    }
+                    self.syncNote(note, {
+                        isSaveMHTML: true,
+                        tab: tab
                     });
                 }
             });
@@ -233,208 +200,11 @@
             if (self.userData) {
                 callback && callback();
             } else {
-                self.notifyHTML(chrome.i18n.getMessage('NotLogin'), false);
+                NotifyTips.showPersistent('NotLogin');
                 self.checkLogin(function() {
                     callback && callback();
                 });
             }
-        },
-        saveNote: function(title, sourceurl, notecontent, tags, categoryid, noteid, importance, successCallback, failCallback) {
-            var self = this;
-            self.insureLogin(function() {
-                self._saveNote(title, sourceurl, notecontent, tags, categoryid, noteid, importance, successCallback, failCallback);
-            });
-        },
-        _saveNote: function(title, sourceurl, notecontent, tags, categoryid, noteid, importance, successCallback, failCallback) {
-            var self = this;
-            if (!title && !notecontent) {
-                self.notifyHTML(chrome.i18n.getMessage('CannotSaveBlankNote'));
-                return;
-            }
-            var dataObj = {
-                title: self.getTitleByText(title),
-                sourceurl: sourceurl,
-                notecontent: notecontent,
-                tags: tags || '',
-                categoryid: categoryid || '',
-                noteid: noteid || '',
-                importance: importance || 0
-            }
-            self.notifyHTML(chrome.i18n.getMessage('IsSavingNote'), false);
-            $.ajax({
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                type: 'POST',
-                url: self.baseUrl + '/note/save',
-                data: JSON.stringify(dataObj),
-                success: function(data) {
-                    if (data.error) {
-                        if (data.error == 'notlogin') {
-                            self.notifyHTML(chrome.i18n.getMessage('NotLogin'));
-                        } else {
-                            self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
-                        }
-                        failCallback && failCallback();
-                        return;
-                    }
-                    successCallback && successCallback();
-                    var successTip = chrome.i18n.getMessage('SaveNoteSuccess'),
-                        viewURL = self.baseUrl + '/note/previewfull/' + data.Note.NoteID,
-                        viewTxt = chrome.i18n.getMessage('ViewText');
-                    self.notifyHTML(successTip + '<a href="' + viewURL + '" target="_blank" id="closebtn">' + viewTxt + '</a>', 10000);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    failCallback && failCallback();
-                    self.notifyHTML(chrome.i18n.getMessage('SaveNoteFailed'));
-                }
-            });
-        },
-        saveImgs: function(msg, successCallback, failCallback) {
-            var self = this;
-            self.insureLogin(function() {
-                self._saveImgs(msg, successCallback, failCallback);
-            });
-        },
-        _saveImgs: function(msg, successCallback, failCallback) {
-            var self = this,
-                content = '',
-                imgs = msg.imgs,
-                titles = msg.imgTitles,
-                saveNormalNote = function() {
-                    for (var i = 0, l = imgs.length; i < l; i++) {
-                        content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
-                    }
-                    self.saveNote(msg.title, msg.sourceurl, content, msg.tags);
-                }
-            if (maikuNoteOptions.serializeImg) {
-                //retrieve remote images
-                self.notifyHTML(chrome.i18n.getMessage('isRetrievingRemoteImgTip'), false);
-                var totalImgNum = imgs.length,
-                    serializeSucceedImgNum = 0,
-                    serializeFailedImgNum = 0,
-                    serializeSucceedImgIndex = [],
-                    serializeSucceedImgIndexByOrder = {},
-                    files = {},
-                    removeFiles = function() {
-                        for (var idx in files) {
-                            self.removeFile(files[idx].name, files[idx].size);
-                        }
-                    },
-                    checkComplete = function() {
-                        if (serializeSucceedImgNum + serializeFailedImgNum == totalImgNum) {
-                            if (serializeFailedImgNum == totalImgNum) {
-                                //all images retrieve failed
-                                if (failCallback) {
-                                    //is replace images in page content
-                                    failCallback(true);
-                                } else {
-                                    self.notifyHTML(chrome.i18n.getMessage('RetrieveImagesFailed'));
-                                    saveNormalNote();
-                                }
-                                return false;
-                            }
-                            for (var i = 0, l = serializeSucceedImgIndex.length; i < l; i++) {
-                                serializeSucceedImgIndexByOrder[serializeSucceedImgIndex[i]] = i.toString();
-                            }
-                            self.notifyHTML(chrome.i18n.getMessage('isUploadingImagesTip'), false);
-
-                            var currentCompletedCount = 0;
-                            for (var itemIndex in formDataQueue) {
-                                var formDataItem = formDataQueue[itemIndex];
-                                (function(index) {
-                                    $.ajax({
-                                        url: self.baseUrl + "/attachment/savemany/",
-                                        type: "POST",
-                                        data: formDataItem,
-                                        processData: false,
-                                        contentType: false,
-                                        success: function(data) {
-                                            if (data.error) {
-                                                //todo: server error, pending note...
-                                                console.log('Internal error: ');
-                                                console.log(data.error);
-                                                if (failCallback) {
-                                                    failCallback(true);
-                                                }
-                                                removeFiles();
-                                                return;
-                                            }
-                                            if (successCallback) {
-                                                //is replace images in page content
-                                                successCallback(data, needReplaceImgsQueue[index], data[0].NoteID, ++currentCompletedCount >= formDataQueue.length);
-                                            } else {
-                                                var d, noteId = data[0].NoteID,
-                                                    realIndex;
-                                                for (var i = 0, l = totalImgNum; i < l; i++) {
-                                                    realIndex = serializeSucceedImgIndexByOrder[i];
-                                                    if (realIndex) {
-                                                        d = data[realIndex];
-                                                        content += '<img src="' + d.Url + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
-                                                        delete serializeSucceedImgIndexByOrder[i];
-                                                    } else {
-                                                        content += '<img src="' + imgs[i] + '" title="' + titles[i] + '" alt="' + titles[i] + '"><br />';
-                                                    }
-                                                }
-                                                if (++currentCompletedCount >= formDataQueue.length) {
-                                                    self.saveNote(msg.title, msg.sourceurl, content, msg.tags, '', noteId);
-                                                }
-                                            }
-                                            if (currentCompletedCount >= formDataQueue.length) {
-                                                removeFiles();
-                                            }
-                                        },
-                                        error: function(jqXHR, textStatus, errorThrown) {
-                                            console.log('xhr error: ')
-                                            console.log(textStatus)
-                                            removeFiles();
-                                            self.notifyHTML(chrome.i18n.getMessage('UploadImagesFailed'));
-                                        }
-                                    });
-                                })(itemIndex);
-                            }
-                        }
-                    };
-                // formData = new FormData();
-                // formData.append('type', maikuNoteOptions.imageAttachment ? 'Attachment' : 'Embedded');
-                // formData.append('categoryId', msg.categoryId || '');
-                // formData.append('id', msg.id || '');
-                var maxUploadSize = 1024 * 1024 * 10,
-                    currentUploadSize = 0,
-                    formDataQueue = [],
-                    needReplaceImgsQueue = [],
-                    formData, needReplaceImgsAry;
-                for (var i = 0, l = totalImgNum; i < l; i++) {
-                    self.downloadImage(imgs[i], i, function(file, idx) {
-                        serializeSucceedImgNum++;
-                        // serializeSucceedImgIndex.push(idx);
-                        if (currentUploadSize + file.size > maxUploadSize || !formData || !needReplaceImgsAry) {
-                            formData = self.createFormData(msg.id, maikuNoteOptions.imageAttachment, msg.categoryId);
-                            formDataQueue.push(formData);
-                            needReplaceImgsAry = [];
-                            needReplaceImgsQueue.push(needReplaceImgsAry)
-                            currentUploadSize = 0;
-                        }
-                        currentUploadSize += file.size;
-                        formData.append('file' + idx, file);
-                        files[idx] = file;
-                        needReplaceImgsAry.push(imgs[idx])
-                        checkComplete();
-                    }, function(idx) {
-                        serializeFailedImgNum++;
-                        checkComplete();
-                    });
-                }
-            } else {
-                saveNormalNote();
-            }
-        },
-        createFormData: function(noteId, type, categoryId) {
-            var f = new FormData();
-            f.append('type', type ? 'Attachment' : 'Embedded');
-            f.append('categoryId', categoryId || '');
-            f.append('id', noteId || '');
-            return f;
         },
         initExtensionConnect: function() {
             var self = this;
@@ -468,6 +238,7 @@
                         self.actionfrompopupinspecotrHandler(port);
                         break;
                     case 'noarticlefrompage':
+                        console.log('error noarticlefrompage');
                         self.noarticlefrompageHandler(port);
                         break;
                     default:
@@ -491,8 +262,7 @@
                     tags: msg.tags,
                     categoryid: msg.categoryid
                 }
-                MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                MKSyncTaskQueue.start();
+                self.syncNote(note);
             });
         },
         allimagesHandlerConnect: function(port) {
@@ -509,8 +279,7 @@
                     sourceurl: msg.sourceurl,
                     notecontent: content
                 }
-                MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                MKSyncTaskQueue.start();
+                self.syncNote(note);
             });
         },
         linkHandlerConnect: function(port) {
@@ -522,8 +291,7 @@
                     sourceurl: msg.sourceurl,
                     notecontent: content
                 }
-                MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                MKSyncTaskQueue.start();
+                self.syncNote(note);
             });
         },
         alllinksHandlerConnect: function(port) {
@@ -540,9 +308,7 @@
                     sourceurl: msg.sourceurl,
                     notecontent: content
                 }
-                MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                MKSyncTaskQueue.start();
-                // self.saveNote(msg.title, msg.sourceurl, content);
+                self.syncNote(note);
             });
         },
         getpagecontentConnect: function(port) {
@@ -555,8 +321,7 @@
                     tags: msg.tags,
                     categoryid: msg.categoryid
                 }
-                MKSyncTaskQueue.add(new MKSyncTask(note, self))
-                MKSyncTaskQueue.start();
+                self.syncNote(note);
             });
         },
         maikuclipperisreadyHandlerConnect: function(port) {
@@ -582,122 +347,9 @@
                 });
             });
         },
-        noarticlefrompageHandler: function(port) {
-            var self = this;
-            port.onMessage.addListener(function(data) {
-                self.notifyHTML(chrome.i18n.getMessage('NoArticleFromPage'));
-            });
-        },
-        onFileError: function(err) {
-            for (var p in FileError) {
-                if (FileError[p] == err.code) {
-                    console.log('Error code: ' + err.code + 'Error info: ' + p);
-                    break;
-                }
-            }
-        },
-        writeBlobAndSendFile: function(fs, blob, fileName, successCallback, errorCallback, imgIndex) {
-            var self = this;
-            fs.root.getFile(fileName, {
-                create: true
-            }, function(fileEntry) {
-                fileEntry.createWriter(function(fileWriter) {
-                    fileWriter.onwrite = function(e) {
-                        console.log('Write completed.');
-                        fileEntry.file(function(file) {
-                            successCallback(file, imgIndex);
-                        });
-                    };
-                    fileWriter.onerror = function(e) {
-                        console.log('Write failed: ' + e.toString());
-                    };
-                    fileWriter.write(blob);
-                }, self.onFileError);
-            }, self.onFileError);
-        },
-        downloadImage: function(url, imgIndex, successCallback, errorCallback) {
-            var self = this;
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function(e) {
-                if (this.status == 200) {
-                    var suffix = url.split('.'),
-                        blob = new Blob([this.response], {
-                            type: 'image/' + suffix[suffix.length - 1]
-                        }),
-                        parts = url.split('/'),
-                        fileName = parts[parts.length - 1];
-                    window.requestFileSystem(TEMPORARY, this.response.byteLength, function(fs) {
-                        self.writeBlobAndSendFile(fs, blob, fileName, successCallback, errorCallback, imgIndex);
-                    }, self.onFileError);
-                }
-            }
-            xhr.onerror = function() {
-                console.log('retrieve remote image xhr onerror')
-                errorCallback && errorCallback(imgIndex);
-            }
-            xhr.onabort = function() {
-                console.log('retrieve remote image xhr onabort')
-                errorCallback && errorCallback(imgIndex);
-            }
-            xhr.send(null);
-        },
-        removeFile: function(fileName, fileSize) {
-            var self = this;
-            window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
-                fs.root.getFile(fileName, {}, function(fileEntry) {
-                    fileEntry.remove(function() {
-                        console.log('File ' + fileName + ' removed.');
-                    }, self.onFileError);
-                }, self.onFileError);
-            }, self.onFileError);
-        },
-        notify: function(content, lastTime, title, icon) {
-            //deprecated
-            if (!content) return;
-            title = title || '';
-            icon = icon || '../images/icons/48x48.png';
-            if (self.notification) self.notification.cancel();
-            self.notification = webkitNotifications.createNotification(
-            icon, title, content);
-            self.notification.show();
-            if (lastTime !== false) {
-                setTimeout(function() {
-                    self.notification.cancel();
-                }, lastTime || 5000);
-            }
-        },
-        notifyHTML: function(content, lastTime, title) {
-            if (!content) return;
-            var self = this;
-            self.notificationData = {
-                content: content,
-                title: title || ''
-            }
-            if (self.notification) {
-                clearTimeout(self.notificationTimer);
-                //chrome version below 20 has no such method
-                if (chrome.extension.sendMessage) {
-                    chrome.extension.sendMessage({
-                        name: 'sendnotification',
-                        data: self.notificationData
-                    });
-                }
-            } else {
-                self.notification = webkitNotifications.createHTMLNotification('notification.html');
-                self.notification.addEventListener('close', function(e) {
-                    self.notification = null;
-                });
-                self.notification.show();
-            }
-            if (lastTime !== false) {
-                self.notificationTimer = setTimeout(function() {
-                    self.notification && self.notification.cancel();
-                }, lastTime || 5000);
-            }
-        },
         checkLogin: function(callback) {
+            console.log('checkLogin checkLogin');
+            console.log(callback);
             var self = this;
             self.getUser(function(user) {
                 if (!user) {
@@ -711,11 +363,17 @@
                     }, function(win) {
                         var tabId = win.tabs[0].id;
                         chrome.tabs.onUpdated.addListener(function HandlerConnect(id, info) {
+                            console.log('chrome.tabs.onUpdated.addListener');
                             if (info.status == 'loading' && id == tabId) {
                                 self.getUser(function(user) {
-                                    if (user) {
-                                        chrome.tabs.onUpdated.removeListener(HandlerConnect);
-                                        chrome.windows.remove(win.id, callback(user));
+                                    console.log('****')
+                                    try {
+                                        if (user) {
+                                            chrome.tabs.onUpdated.removeListener(HandlerConnect);
+                                            chrome.windows.remove(win.id, callback(user));
+                                        }
+                                    } catch (e) {
+                                        console.log(e);
                                     }
                                 });
                             }
@@ -838,6 +496,7 @@
             chrome.tabs.onUpdated.addListener(function(id, info, tab) {
                 if (info.status == 'loading') {
                     //console.log('tab updated');
+                    //
                     maikuNoteUtil.createParticularContextMenu(tab.url.split('/')[2]);
                 }
                 if (info.status == 'complete') {
@@ -873,6 +532,7 @@
                         self.getuserHandlerRequest(sender, request.refresh);
                         break;
                     case 'popuplogin':
+                        console.log('popuplogin');
                         self.checkLogin(function(user) {
                             chrome.tabs.sendRequest(sender.tab.id, {
                                 name: 'userlogined',
@@ -890,6 +550,7 @@
                         break;
                     case 'clicksavebtnwithoutloginpopup':
                         //popup, click save button, button user has not logined
+                        console.log('clicksavebtnwithoutloginpopup');
                         self.checkLogin(function(user) {
                             chrome.tabs.sendRequest(sender.tab.id, {
                                 name: 'clicksavebtnafteruserloginedpopup',
@@ -932,6 +593,7 @@
         },
         getUser: function(callback) {
             var self = this;
+            console.log(self.userData);
             if (self.userData) {
                 callback(self.userData);
                 return;
@@ -1020,6 +682,12 @@
                 }
                 localStorage['version'] = currVersion;
             }
+        },
+        syncNote: function(note, option) {
+            option = option || {};
+            option.baseUrl = chrome.i18n.getMessage('baseUrl');
+            MKSyncTaskQueue.add(new MKSyncTask(note, option))
+            MKSyncTaskQueue.start();
         }
     };
     Object.defineProperties(maikuNote, {

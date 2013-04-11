@@ -78,12 +78,13 @@
             picurl;
             if(img.length > 0){
                 picurl = img[0].src.replace(/thumbnail/, 'large').replace(/bmiddle/, 'large');
+                noteContent += '<img src="' + picurl + '" />'
             }
             port.postMessage({
                 title: title,
                 sourceurl: sourceurl,
-                content: noteContent,
-                picurl: picurl
+                content: noteContent//,
+                // picurl: picurl
             });
         }
 	});

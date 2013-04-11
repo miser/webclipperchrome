@@ -164,9 +164,9 @@ var ReadyErrorNotify = (function() {
 
     var notification = null;
     return {
-        show: function(key) {
-            if(notification) return;
-            
+        show: function(key, timer) {
+            if (notification) return;
+
             notification = webkitNotifications.createHTMLNotification('readyerror.html');
             notification.addEventListener('close', function(e) {
                 notification = null;
@@ -179,6 +179,12 @@ var ReadyErrorNotify = (function() {
             }
             //需要给notification.html 第一次加载的时候调用
             this.notificationData = data;
+            var close = this.close;
+            if (!isNaN(timer)) {
+                setTimeout(function() {
+                    close();
+                }, timer);
+            }
         },
         close: function() {
             if (notification) notification.close();
