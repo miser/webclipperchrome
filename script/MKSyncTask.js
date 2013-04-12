@@ -29,7 +29,6 @@ MKSyncTask.prototype.syncNormal = function(callback) {
         this.note.note.noteid = '';
         syncState.off("changeState");
         syncState.on('changeState', function(state, data) {
-            console.log(state);
             if (state == 'note.init') {
                 //笔记正在初始化
                 note.init();

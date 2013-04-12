@@ -13,7 +13,7 @@
    },
    "BrowserTooLower": {
       "description": "browser not support chrome.extension.sendMessage method",
-      "message": "\u62B1\u6B49\uFF0C\u9EA6\u5E93\u526A\u8F91\u5668\u6682\u65F6\u4E0D\u652F\u6301\u8BE5\u7248\u672C\u7684Chrome\u6D4F\u89C8\u5668\uFF0C\u8BF7\u5C06\u6D4F\u89C8\u5668\u5347\u7EA7\u5230\u6700\u65B0\u7A33\u5B9A\u7248\u672C\u3002\u70B9\u51FB\u53F3\u4E0A\u89D2\u5DE5\u5177\u6309\u94AE\u9009\u62E9'\u5173\u4E8E Google Chrome(G)'\u8FDB\u884C\u81EA\u52A8\u5347\u7EA7"
+      "message": "\u62B1\u6B49\uFF0C\u9EA6\u5E93\u526A\u96C6\u5668\u6682\u65F6\u4E0D\u652F\u6301\u8BE5\u7248\u672C\u7684Chrome\u6D4F\u89C8\u5668\uFF0C\u8BF7\u5C06\u6D4F\u89C8\u5668\u5347\u7EA7\u5230\u6700\u65B0\u7A33\u5B9A\u7248\u672C\u3002\u70B9\u51FB\u53F3\u4E0A\u89D2\u5DE5\u5177\u6309\u94AE\u9009\u62E9'\u5173\u4E8E Google Chrome(G)'\u8FDB\u884C\u81EA\u52A8\u5347\u7EA7"
    },
    "CancelTip": {
       "description": "cancel tip",
@@ -25,7 +25,7 @@
    },
    "ClipperNotReady": {
       "description": "clipper is not ready, notify user to refresh page is possible",
-      "message": "\u8BE5\u9875\u9762\u5728\u5B89\u88C5\u526A\u8F91\u5668\u524D\u5DF2\u6253\u5F00\uFF0C\u8BF7\u5148\u5237\u65B0\u9875\u9762\u3002"
+      "message": "\u8BE5\u9875\u9762\u5728\u5B89\u88C5\u526A\u96C6\u5668\u524D\u5DF2\u6253\u5F00\uFF0C\u8BF7\u5148\u5237\u65B0\u9875\u9762\u3002"
    },
    "CloseTip": {
       "description": "cancel tip",
@@ -33,7 +33,7 @@
    },
    "ExtensionDescription": {
       "description": "extension description",
-      "message": "\u514D\u8D39\u3001\u5FEB\u901F\u526A\u8F91\u5185\u5BB9\u81F3\u9EA6\u5E93\u8BB0\u4E8B(http://www.mknote.com)"
+      "message": "\u514D\u8D39\u3001\u5FEB\u901F\u526A\u96C6\u5185\u5BB9\u81F3\u9EA6\u5E93\u8BB0\u4E8B(http://www.mknote.com)"
    },
    "ExtensionName": {
       "description": "extension name",
@@ -41,7 +41,7 @@
    },
    "IsClippingPage": {
       "description": "is clipping page, let user wait tip",
-      "message": "\u6B63\u5728\u526A\u8F91\u9875\u9762..."
+      "message": "\u6B63\u5728\u526A\u96C6\u9875\u9762..."
    },
    "IsSavingNote": {
       "description": "is clipping page, let user wait tip",
@@ -73,7 +73,7 @@
    },
    "RetrieveRemoteImg": {
       "description": "retrieve remote images",
-      "message": "\u662F\u5426\u4FDD\u5B58\u56FE\u7247\u6587\u4EF6"
+      "message": "存储图片到麦库"
    },
    "SaveNoteFailed": {
       "description": "save note failed tip",
@@ -97,27 +97,27 @@
    },
    "clipAllImageContextMenu": {
       "description": "save all image",
-      "message": "\u526A\u8F91\u7F51\u9875\u56FE\u7247"
+      "message": "\u526A\u96C6\u7F51\u9875\u56FE\u7247"
    },
    "clipAllLinkContextMenu": {
       "description": "save all link url",
-      "message": "\u526A\u8F91\u7F51\u9875\u94FE\u63A5"
+      "message": "\u526A\u96C6\u7F51\u9875\u94FE\u63A5"
    },
    "clipImageContextMenu": {
       "description": "save selected image",
-      "message": "\u526A\u8F91\u8BE5\u56FE\u7247"
+      "message": "\u526A\u96C6\u8BE5\u56FE\u7247"
    },
    "clipLinkContextMenu": {
       "description": "save link url",
-      "message": "\u526A\u8F91\u8BE5\u94FE\u63A5"
+      "message": "\u526A\u96C6\u8BE5\u94FE\u63A5"
    },
    "clipLinkContextMenuWeibo": {
       "description": "clip weibo.com",
-      "message": "\u526A\u8F91\u8BE5\u6761\u5FAE\u535A"
+      "message": "\u526A\u96C6\u8BE5\u6761\u5FAE\u535A"
    },
    "clipPageContextMenu": {
       "description": "save page",
-      "message": "\u526A\u8F91\u7F51\u9875\u5185\u5BB9"
+      "message": "\u526A\u96C6\u7F51\u9875\u5185\u5BB9"
    },
    "clipPageUrlContextMenu": {
       "description": "save page url",
@@ -125,11 +125,11 @@
    },
    "clipReviewContextMenuDouban": {
       "description": "clip douban.com",
-      "message": "\u526A\u8F91\u8BE5\u6761\u8BC4\u8BBA"
+      "message": "\u526A\u96C6\u8BE5\u6761\u8BC4\u8BBA"
    },
    "clipSelectionContextMenu": {
       "description": "save selected content",
-      "message": "\u526A\u8F91\u9009\u62E9\u5185\u5BB9"
+      "message": "\u526A\u96C6\u9009\u62E9\u5185\u5BB9"
    },
    "helperUrl": {
       "description": "maiku clipper helper url",
@@ -153,7 +153,7 @@
    },
    "pageCaptureFailed": {
       "description": "capture page failed",
-      "message": "\u526A\u8F91\u9875\u9762\u5931\u8D25\u3002"
+      "message": "\u526A\u96C6\u9875\u9762\u5931\u8D25\u3002"
    },
    "pageCaptureUploading": {
       "description": "is uploading captured page attachment",
@@ -163,79 +163,82 @@
       "description": "no aricle from page while auto extraction",
       "message": "\u9875\u9762\u6CA1\u6709\u6B63\u6587\u54E6\u256E\u0028\u256F\u005F\u2570\u0029\u256D\u5C1D\u8BD5\u4FDD\u5B58\u7F51\u9875\u5427"
    },
-   "syncTaskAdd":{
-     "message": "{0} \u88AB\u6DFB\u52A0\u81F3\u540C\u6B65\u5217\u961F" 
+   "syncTaskAdd": {
+      "message": "{0} \u88AB\u6DFB\u52A0\u81F3\u540C\u6B65\u5217\u961F"
    },
-   "syncTaskSuccess":{
-     "message": "{0} \u540C\u6B65\u6210\u529F" 
+   "syncTaskSuccess": {
+      "message": "{0} \u540C\u6B65\u6210\u529F"
    },
-   "syncTaskFail":{
-     "message": "{0} \u540C\u6B65\u5931\u8D25\uFF0C\u8BF7\u91CD\u65B0\u5C1D\u8BD5" 
+   "syncTaskFail": {
+      "message": "{0} \u540C\u6B65\u5931\u8D25\uFF0C\u8BF7\u91CD\u65B0\u5C1D\u8BD5"
    },
-   "nextTask":{
-      "message":"\u6B63\u5728\u51C6\u5907\u4E0B\u6761\u540C\u6B65\u7B14\u8BB0 {0}"
-      },
-   "noteInit":{
-     "message": "{0} \u6B63\u5728\u88AB\u521D\u59CB\u5316..." 
+   "nextTask": {
+      "message": "\u6B63\u5728\u51C6\u5907\u4E0B\u6761\u540C\u6B65\u7B14\u8BB0 {0}"
    },
-   "noteInitSuccess":{
-     "message": "{0} \u521D\u59CB\u5316\u5B8C\u6210" 
+   "noteInit": {
+      "message": "{0} \u6B63\u5728\u88AB\u521D\u59CB\u5316..."
    },
-   "noteInitFail":{
-     "message": "{0} \u521D\u59CB\u5316\u5931\u8D25" 
+   "noteInitSuccess": {
+      "message": "{0} \u521D\u59CB\u5316\u5B8C\u6210"
    },
-   "saveImages":{
-     "message": "\u6B63\u5728\u4E0B\u8F7D\u7B14\u8BB0\u56FE\u7247..." 
+   "noteInitFail": {
+      "message": "{0} \u521D\u59CB\u5316\u5931\u8D25"
    },
-   "saveImagesSuccess":{
-     "message": "\u7B14\u8BB0\u56FE\u7247\u4E0B\u8F7D\u5B8C\u6210" 
+   "saveImages": {
+      "message": "\u6B63\u5728\u4E0B\u8F7D\u7B14\u8BB0\u56FE\u7247..."
    },
-   "saveImagesFail":{
-     "message": "\u7B14\u8BB0\u56FE\u7247\u4E0B\u8F7D\u5931\u8D25" 
+   "saveImagesSuccess": {
+      "message": "\u7B14\u8BB0\u56FE\u7247\u4E0B\u8F7D\u5B8C\u6210"
    },
-   "uploadImages":{
-     "message": "\u6B63\u5728\u63D0\u4EA4\u7B14\u8BB0\u56FE\u7247\u81F3\u9EA6\u5E93\u670D\u52A1\u5668\u4E2D..." 
+   "saveImagesFail": {
+      "message": "\u7B14\u8BB0\u56FE\u7247\u4E0B\u8F7D\u5931\u8D25"
    },
-   "uploadImagesSuccess":{
-     "message": "\u7B14\u8BB0\u56FE\u7247\u63D0\u4EA4\u6210\u529F" 
+   "uploadImages": {
+      "message": "\u6B63\u5728\u63D0\u4EA4\u7B14\u8BB0\u56FE\u7247\u81F3\u9EA6\u5E93\u670D\u52A1\u5668\u4E2D..."
    },
-   "uploadImagesFail":{
-     "message": "\u7B14\u8BB0\u56FE\u7247\u63D0\u4EA4\u5931\u8D25" 
+   "uploadImagesSuccess": {
+      "message": "\u7B14\u8BB0\u56FE\u7247\u63D0\u4EA4\u6210\u529F"
    },
-   "noteSaveContent":{
-     "message": "{0} \u6B63\u5728\u4FDD\u5B58\u7B14\u8BB0\u6B63\u6587..." 
+   "uploadImagesFail": {
+      "message": "\u7B14\u8BB0\u56FE\u7247\u63D0\u4EA4\u5931\u8D25"
    },
-   "noteSaveContentSuccess":{
-     "message": "{0} \u7B14\u8BB0\u6B63\u6587\u4FDD\u5B58\u6210\u529F" 
+   "noteSaveContent": {
+      "message": "{0} \u6B63\u5728\u4FDD\u5B58\u7B14\u8BB0\u6B63\u6587..."
    },
-   "noteSaveContentFail":{
-     "message": "{0} \u7B14\u8BB0\u6B63\u6587\u4FDD\u5B58\u5931\u8D25" 
+   "noteSaveContentSuccess": {
+      "message": "{0} \u7B14\u8BB0\u6B63\u6587\u4FDD\u5B58\u6210\u529F"
    },
-   "noteDelete":{
-     "message": "{0} \u6B63\u5728\u88AB\u5220\u9664" 
+   "noteSaveContentFail": {
+      "message": "{0} \u7B14\u8BB0\u6B63\u6587\u4FDD\u5B58\u5931\u8D25"
    },
-   "noteDeleteSuccess":{
-     "message":  "{0} \u88AB\u5220\u9664\u6210\u529F" 
+   "noteDelete": {
+      "message": "{0} \u6B63\u5728\u88AB\u5220\u9664"
    },
-   "noteDeleteFail":{
-     "message":  "{0} \u88AB\u5220\u9664\u5931\u8D25" 
+   "noteDeleteSuccess": {
+      "message": "{0} \u88AB\u5220\u9664\u6210\u529F"
    },
-   "noteRepeatSave":{
-     "message":  "{0} \u7B14\u8BB0\u4E0A\u4F20\u51FA\u9519\uFF0C\u6B63\u5728\u91CD\u65B0\u4E0A\u4F20" 
+   "noteDeleteFail": {
+      "message": "{0} \u88AB\u5220\u9664\u5931\u8D25"
    },
-   "noteErrorTemplate":{
-      "message":  "<li>{0} \u526A\u8F91\u51FA\u9519\uFF0C\u662F\u5426\u9700\u8981 <a href='javascript:void(0)' class='repeat-btn' data-guid='{1}'>\u91CD\u8BD5</a>  <a href='javascript:void(0)' class='cancel-btn' data-guid='{1}'>\u653E\u5F03</a></li>"  
+   "noteRepeatSave": {
+      "message": "{0} \u7B14\u8BB0\u4E0A\u4F20\u51FA\u9519\uFF0C\u6B63\u5728\u91CD\u65B0\u4E0A\u4F20"
    },
-   "notClipPageInfo":{
-     "message":  "\u65E0\u6CD5\u526A\u96C6\u8BE5\u9875\u4FE1\u606F" 
+   "noteErrorTemplate": {
+      "message": "<li>{0} \u526A\u96C6\u51FA\u9519\uFF0C\u662F\u5426\u9700\u8981 <a href='javascript:void(0)' class='repeat-btn' data-guid='{1}'>\u91CD\u8BD5</a>  <a href='javascript:void(0)' class='cancel-btn' data-guid='{1}'>\u653E\u5F03</a></li>"
    },
-   "noteSaveAsMHTML":{
-     "message": "正在生成MHTML..." 
+   "notClipPageInfo": {
+      "message": "\u65E0\u6CD5\u526A\u96C6\u8BE5\u9875\u4FE1\u606F"
    },
-   "noteMHTMLSuccess":{
-     "message": "生成MHTML成功" 
+   "noteSaveAsMHTML": {
+      "message": "正在生成MHTML..."
    },
-   "noteMHTMLFail":{
-     "message": "生成MHTML失败" 
+   "noteMHTMLSuccess": {
+      "message": "生成MHTML成功"
+   },
+   "noteMHTMLFail": {
+      "message": "生成MHTML失败"
+   },
+   "weiboClipError": {
+      "message": "选择微博的时间链接才能剪辑该条微博。"
    }
 }

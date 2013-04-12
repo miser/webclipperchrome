@@ -361,11 +361,14 @@
                         top: 0
                     }, function(win) {
                         var tabId = win.tabs[0].id;
+                        console.log('tabId:' + tabId);
                         chrome.tabs.onUpdated.addListener(function HandlerConnect(id, info) {
                             if (info.status == 'loading' && id == tabId) {
                                 self.getUser(function(user) {
                                     if (user) {
                                         chrome.tabs.onUpdated.removeListener(HandlerConnect);
+                                        console.log('win.id:' + win.id);
+                                        console.log(win);
                                         chrome.windows.remove(win.id, callback(user));
                                     }
                                 });
@@ -678,8 +681,7 @@
         syncNote: function(note, option) {
             option = option || {};
             option.baseUrl = chrome.i18n.getMessage('baseUrl');
-            MKSyncTaskQueue.add(new MKSyncTask(note, option))
-            MKSyncTaskQueue.start();
+            MKSyncTaskQueue.add(new MKSyncTask(note, option));
         }
     };
     Object.defineProperties(maikuNote, {
