@@ -1,3 +1,4 @@
+var scriptRegex =/<script[^>]*>(.|\n)*?<\/script>/ig
 var MkSyncNote = function(noteData, option, stateEvent) {
     var defaultData = {
         title: '[未命名笔记]',
@@ -13,7 +14,9 @@ var MkSyncNote = function(noteData, option, stateEvent) {
     noteData = noteData || {};
     this.note = {};
     $.extend(this.note, defaultData, noteData);
-    this.noteEl = $('<div></div>').append(this.note.notecontent);
+    var noteContent = this.note.notecontent;
+    noteContent = noteContent.replace(scriptRegex,"");
+    this.noteEl = $('<div></div>').append(noteContent);
     this.note.notecontent = ''; //this.noteEl.html();
     if (!stateEvent) {
         this.syncState = {};

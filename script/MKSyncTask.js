@@ -103,6 +103,7 @@ MKSyncTask.prototype.end = function(state) {
 }
 MKSyncTask.prototype.repeat = function(callback) {
     NotifyTips.showTemporary('noteRepeatSave');
+    console.log('repeat');
     // this.note.note.noteid = '';
     // this.state.off("changeState");
     this.sync(callback);

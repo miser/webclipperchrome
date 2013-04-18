@@ -1,38 +1,57 @@
 var MkSyncImage = function(imgEl) {
     this.image = imgEl;
 }
-MkSyncImage.prototype.download = function(callback, errorFn, error404) {
-    var self = this,
-        image = self.image,
-        url = image.src,
-        xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'arraybuffer';
-    xhr.onload = function(e) {
-        if (this.status == 200) {
-            var suffix = url.split('.'),
-                blob = new Blob([this.response], {
-                    type: 'image/' + suffix[suffix.length - 1]
-                }),
-                parts = url.split('/'),
-                fileName = parts[parts.length - 1];
-            MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
-                callback(self, file)
-            })
-        } else if (this.status != 404) {
+MkSyncImage.prototype.download = function(callback, errorFn, error404, noResponse) {
+    var self = this;
+    try {
+        var image = self.image,
+            url = image.src,
+            xhr = new XMLHttpRequest();
+        // if(url.indexOf('http://kkpgv2.xunlei.com/?u=kkpv') >= 0){
+        //     return;
+        // }
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onerror = function() {
             errorFn && errorFn(self, arguments);
-        } else {
-            // error404 && error404(self, arguments)
-            error404(self)
+            console.log('retrieve remote image xhr onerror')
         }
+        xhr.onabort = function() {
+            errorFn && errorFn(self, arguments);
+            console.log('retrieve remote image xhr onabort')
+        }
+        // xhr.onprogress = function() {
+        //     console.log(arguments);
+        // }
+        xhr.onload = function(e) {
+            if (this.status == 200) {
+                var suffix = url.split('.'),
+                    blob = new Blob([this.response], {
+                        type: 'image/' + suffix[suffix.length - 1]
+                    }),
+                    parts = url.split('/'),
+                    fileName = parts[parts.length - 1];
+
+                if (this.response == null) {
+                    noResponse(self)
+                    return;
+                }
+
+                MkFileSystem.create(this.response.byteLength, fileName, blob, function(file) {
+                    callback(self, file)
+                })
+            } else if (this.status != 404) {
+                errorFn && errorFn(self, arguments);
+            } else {
+                // error404 && error404(self, arguments)
+                error404(self)
+            }
+        }
+        console.log(url);
+        xhr.send(null);
+    } catch (e) {
+        console.log(e);
     }
-    xhr.onerror = function() {
-        console.log('retrieve remote image xhr onerror')
-    }
-    xhr.onabort = function() {
-        console.log('retrieve remote image xhr onabort')
-    }
-    xhr.send(null);
 }
 
 var MkSyncImages = function(note, syncImageAry, option) {
@@ -50,40 +69,47 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
         note = self.note,
         option = self.option,
         downloadState = {
-            success: 'download-success',
-            error: 'download-error',
-            error404: 'download-404'
+            success: 'success',
+            error: 'error',
+            error404: '404',
+            noResponse: 'noresponse'
         },
-        errorBreak = false,
         completedImageState = {
             waitting: 'waitting',
             error: 'error'
-        }
+        };
 
 
-        /**
-         * 图片请求是否成功都需要uploadPackDataForm做整体判断，
-         * 好处：统一处理，防止已完成的图片的 requestFileSystem 或被删除。失败的请求比起成功的少很多，也这样做也减轻了逻辑出错
-         * 坏处：图片请求出错不能立即通知程序，会有延迟。
-         */
+    /**
+     * 图片请求是否成功都需要uploadPackDataForm做整体判断，
+     * 好处：统一处理，防止已完成的图片的 requestFileSystem 或被删除。失败的请求比起成功的少很多，也这样做也减轻了逻辑出错
+     * 坏处：图片请求出错不能立即通知程序，会有延迟。
+     */
 
     for (var i = 0; i < images.length; i++) {
-        if (errorBreak) break;
-        images[i].download(function(img, file) {
-            img.file = file;
-            img.state = downloadState.success;
-            uploadPackDataForm();
-        }, function(img) {
-            img.state = downloadState.error;
-            errorBreak = true;
-            uploadPackDataForm();
-        }, function(img) {
-            img.state = downloadState.error404;
-            uploadPackDataForm();
-        })
+        try {
+            images[i].download(function(img, file) {
+                img.file = file;
+                img.state = downloadState.success;
+                console.log('img.state:' + img.state);
+                uploadPackDataForm();
+            }, function(img) {
+                img.state = downloadState.error;
+                uploadPackDataForm();
+            }, function(img) {
+                img.state = downloadState.error404;
+                uploadPackDataForm();
+            }, function(img) {
+                img.state = downloadState.noResponse;
+                uploadPackDataForm();
+            })
+        } catch (e) {
+            console.log(e);
+        }
     }
 
-    function uploadPackDataForm(imagesCompletedAry) {
+    function uploadPackDataForm() {
+        console.log('ooxx');
         var imagesCompletedAry = getCompletedAry();
         if (imagesCompletedAry == completedImageState.error) {
             failCallback && failCallback();
@@ -155,6 +181,8 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
         var successCount = 0,
             error404Count = 0,
             errorCount = 0,
+            noResponseCount = 0,
+            completedCount = 0,
             completedAry = [];
         for (var i = 0; i < images.length; i++) {
             var image = images[i];
@@ -165,13 +193,24 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
                 error404Count++;
             } else if (image.state == downloadState.error) {
                 errorCount++;
+            } else if (image.state == downloadState.noResponse) {
+                noResponseCount++;
             }
         }
-        if ((successCount + error404Count) == images.length) {
+        completedCount = successCount + error404Count + noResponseCount;
+        console.log('images.length:' + images.length);
+        console.log('successCount:' + successCount);
+        console.log('error404Count:' + error404Count);
+        console.log('noResponseCount:' + noResponseCount);
+        console.log('errorCount:' + errorCount);
+        if (completedCount == images.length) {
+            console.log('completedCount:' + successCount);
             return completedAry;
-        } else if (errorCount > 0 && (successCount + error404Count + errorCount) == images.length) {
+        } else if (errorCount > 0 && completedCount == images.length) {
+            console.log('completedImageState.error:' + successCount);
             return completedImageState.error;
         } else {
+            console.log('completedImageState.waitting:' + successCount);
             return completedImageState.waitting;
         }
     }
@@ -189,7 +228,7 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            url: window.maikuNote.baseUrl + "/attachment/savemany?d=" + (Math.random()),
+            url: window.maikuNote.baseUrl + "/attachment/savemany",
             type: "POST",
             data: formData,
             processData: false,

@@ -12,15 +12,23 @@ ExtractContentJS.Lib.Util = (function() {
             var d = new Date();
             var t = 0;
             t = d.getHours();
-            t = t*60 + d.getMinutes();
-            t = t*60 + d.getSeconds();
-            t = t*1000 + d.getMilliseconds();
+            t = t * 60 + d.getMinutes();
+            t = t * 60 + d.getSeconds();
+            t = t * 1000 + d.getMilliseconds();
             return t;
         };
         var Timer = function() {
-            var self = { elapsed: 0 };
-            self.reset = function(){ self.elapsed = 0; return self };
-            self.start = function(){ self.msec = now(); return self };
+            var self = {
+                elapsed: 0
+            };
+            self.reset = function() {
+                self.elapsed = 0;
+                return self
+            };
+            self.start = function() {
+                self.msec = now();
+                return self
+            };
             self.stop = function() {
                 self.elapsed += now() - self.msec;
                 return self;
@@ -28,16 +36,24 @@ ExtractContentJS.Lib.Util = (function() {
             return self.start();
         };
 
-        var self = { timers: {} };
+        var self = {
+            timers: {}
+        };
         self.get = function(name) {
             if (!self.timers[name]) {
                 self.timers[name] = new Timer();
             }
             return self.timers[name];
         };
-        self.reset = function(name){ return self.get(name).reset(); };
-        self.start = function(name){ return self.get(name).start(); };
-        self.stop = function(name){ return self.get(name).stop(); };
+        self.reset = function(name) {
+            return self.get(name).reset();
+        };
+        self.start = function(name) {
+            return self.get(name).start();
+        };
+        self.stop = function(name) {
+            return self.get(name).stop();
+        };
         return self;
     };
     Util.Token = function(word) {
@@ -46,14 +62,16 @@ ExtractContentJS.Lib.Util = (function() {
             hiragana: /[\u3042-\u3093\u304C-\u307C\u3041-\u3087\u308E\u3063\u30FC]/,
             // katakana: /[ア-ンガ-ボァ-ョヮッー]/,
             katakana: /[\u30A2-\u30F3\u30AC-\u30DC\u30A1-\u30E7\u30EE\u30C3\u30FC]/,
-            kanji: { test: function(w) {
-                // return '一' <= w && w <= '龠' || w === '々';
-                return '\u4E00' <= w && w <= '\u9FA0' || w === '\u3005';
-            } },
+            kanji: {
+                test: function(w) {
+                    // return '一' <= w && w <= '龠' || w === '々';
+                    return '\u4E00' <= w && w <= '\u9FA0' || w === '\u3005';
+                }
+            },
             alphabet: /[a-zA-Z]/,
             digit: /[0-9]/
         };
-        var tests = function(w){
+        var tests = function(w) {
             var match = {};
             for (var r in regex) {
                 if (regex[r].test(w)) {
@@ -64,10 +82,10 @@ ExtractContentJS.Lib.Util = (function() {
         };
         var self = {
             first: tests(word.charAt(0)),
-            last: tests(word.charAt(word.length-1))
+            last: tests(word.charAt(word.length - 1))
         };
         self.isTokenized = function(prev, next) {
-            var p = prev.length ? prev.charAt(prev.length-1) : '';
+            var p = prev.length ? prev.charAt(prev.length - 1) : '';
             var n = next.length ? next.charAt(0) : '';
             var check = function(w, test) {
                 if (w.length) {
@@ -82,7 +100,7 @@ ExtractContentJS.Lib.Util = (function() {
 
         return self;
     };
-    Util.inherit = function(child,parent) {
+    Util.inherit = function(child, parent) {
         var obj = child || {};
         for (var prop in parent) {
             if (typeof obj[prop] == 'undefined') {
@@ -108,7 +126,7 @@ ExtractContentJS.Lib.Util = (function() {
         var tok = new Util.Token(word);
         var texts = text.split(word);
         var len = texts.length;
-        for (var i=0; i < len; i++) {
+        for (var i = 0; i < len; i++) {
             if (prev && tok.isTokenized(prev, texts[i])) count++;
             prev = texts[i]
         }
@@ -118,8 +136,8 @@ ExtractContentJS.Lib.Util = (function() {
         var index = text.indexOf(word);
         if (index >= 0) {
             var tok = new Util.Token(word);
-            var p = index > 1 ? text.substr(index-1, 1) : '';
-            var n = text.substr(index+word.length, 1);
+            var p = index > 1 ? text.substr(index - 1, 1) : '';
+            var n = text.substr(index + word.length, 1);
             if (tok.isTokenized(p, n)) {
                 return index;
             }
@@ -127,18 +145,19 @@ ExtractContentJS.Lib.Util = (function() {
         return -1;
     };
     Util.dump = function(obj) {
-        if (typeof obj == 'undefined')  return 'undefined';
+        if (typeof obj == 'undefined') return 'undefined';
         if (typeof obj == 'string') return '"' + obj + '"';
-        if (typeof obj != 'object') return ''+obj;
+        if (typeof obj != 'object') return '' + obj;
         if (obj === null) return 'null';
         if (obj instanceof Array) {
-            return '['
-                + obj.map(function(v){return 'obj'/*Util.dump(v)*/;}).join(',')
-                + ']';
+            return '[' + obj.map(function(v) {
+                return 'obj' /*Util.dump(v)*/
+                ;
+            }).join(',') + ']';
         } else {
             var arr = [];
             for (var prop in obj) {
-                arr.push(prop + ':' + 'obj'/*Util.dump(obj[prop])*/);
+                arr.push(prop + ':' + 'obj' /*Util.dump(obj[prop])*/ );
             }
             return '{' + arr.join(',') + '}';
         }
@@ -148,7 +167,7 @@ ExtractContentJS.Lib.Util = (function() {
 
 ExtractContentJS.Lib.A = (function() {
     var A = {};
-    A.indexOf = Array.indexOf || function(self, elt/*, from*/) {
+    A.indexOf = Array.indexOf || function(self, elt /*, from*/ ) {
         var argi = 2;
         var len = self.length;
         var from = Number(arguments[argi++]) || 0;
@@ -159,7 +178,7 @@ ExtractContentJS.Lib.A = (function() {
         }
         return -1;
     };
-    A.filter = Array.filter || function(self, fun/*, thisp*/) {
+    A.filter = Array.filter || function(self, fun /*, thisp*/ ) {
         var argi = 2;
         var len = self.length;
         if (typeof fun != "function") {
@@ -175,18 +194,18 @@ ExtractContentJS.Lib.A = (function() {
         }
         return rv;
     };
-    A.forEach = Array.forEach ||  function(self, fun/*, thisp*/) {
+    A.forEach = Array.forEach || function(self, fun /*, thisp*/ ) {
         var argi = 2;
         var len = self.length;
         if (typeof fun != 'function') {
             throw new TypeError('A.forEach: not a function');
         }
         var thisp = arguments[argi++];
-        for (var i=0; i < len; i++) {
+        for (var i = 0; i < len; i++) {
             if (i in self) fun.call(thisp, self[i], i, self);
         }
     };
-    A.every = Array.every || function(self, fun/*, thisp*/) {
+    A.every = Array.every || function(self, fun /*, thisp*/ ) {
         var argi = 2;
         var len = self.length;
         if (typeof fun != 'function') {
@@ -194,14 +213,13 @@ ExtractContentJS.Lib.A = (function() {
         }
         var thisp = arguments[argi++];
         for (var i = 0; i < len; i++) {
-            if (i in self &&
-                !fun.call(thisp, self[i], i, self)) {
+            if (i in self && !fun.call(thisp, self[i], i, self)) {
                 return false;
             }
         }
         return true;
     };
-    A.map = Array.map || function(self, fun/*, thisp*/) {
+    A.map = Array.map || function(self, fun /*, thisp*/ ) {
         var argi = 2;
         var len = self.length;
         if (typeof fun != 'function') {
@@ -216,7 +234,7 @@ ExtractContentJS.Lib.A = (function() {
         }
         return rv;
     };
-    A.some = Array.some || function(self, fun/*, thisp*/) {
+    A.some = Array.some || function(self, fun /*, thisp*/ ) {
         var argi = 2;
         var len = self.length;
         if (typeof fun != "function") {
@@ -224,14 +242,13 @@ ExtractContentJS.Lib.A = (function() {
         }
         var thisp = arguments[argi++];
         for (var i = 0; i < len; i++) {
-            if (i in self &&
-                fun.call(thisp, self[i], i, self)) {
+            if (i in self && fun.call(thisp, self[i], i, self)) {
                 return true;
             }
         }
         return false;
     };
-    A.reduce = Array.reduce || function(self, fun/*, initial*/) {
+    A.reduce = Array.reduce || function(self, fun /*, initial*/ ) {
         var argi = 2;
         var len = self.length;
         if (typeof fun != 'function') {
@@ -262,9 +279,9 @@ ExtractContentJS.Lib.A = (function() {
             var l = self[0].length;
             var len = self.length;
             var z = new Array(l);
-            for (var i=0; i < l; i++) {
+            for (var i = 0; i < l; i++) {
                 z[i] = [];
-                for (var j=0; j < len; j++) {
+                for (var j = 0; j < len; j++) {
                     z[i].push(self[j][i]);
                 }
             }
@@ -276,7 +293,7 @@ ExtractContentJS.Lib.A = (function() {
         return self ? self[0] : null;
     };
     A.last = function(self) {
-        return self ? self[self.length-1] : null;
+        return self ? self[self.length - 1] : null;
     };
     A.push = function(self, other) {
         return Array.prototype.push.apply(self, other);
@@ -294,7 +311,7 @@ ExtractContentJS.Lib.DOM = (function() {
             if (dv && dv.getComputedStyle) {
                 try {
                     var styles = dv.getComputedStyle(elem, null);
-                } catch(e) {
+                } catch (e) {
                     return null;
                 }
                 prop = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
@@ -330,30 +347,35 @@ ExtractContentJS.Lib.DOM = (function() {
         var a1 = DOM.ancestors(e1).reverse();
         var a2 = DOM.ancestors(e2).reverse();
         var r = null;
-        for (var i=0; a1[i] && a2[i] && a1[i] == a2[i]; i++) {
+        for (var i = 0; a1[i] && a2[i] && a1[i] == a2[i]; i++) {
             r = a1[i];
         }
         return r;
     };
     DOM.countMatchTagAttr = function(node, tag, attr, regexs) {
-        var test = function(v){ return v.test(node[attr]); };
-        if ((node.tagName||'').toLowerCase()==tag && A.some(regexs,test)) {
+        var test = function(v) {
+            return v.test(node[attr]);
+        };
+        if ((node.tagName || '').toLowerCase() == tag && A.some(regexs, test)) {
             return 1;
         }
-        var n=0;
+        var n = 0;
         var children = node.childNodes;
-        for (var i=0, len=children.length; i < len; i++) {
+        for (var i = 0, len = children.length; i < len; i++) {
             n += DOM.countMatchTagAttr(children[i], tag, attr, regexs);
         }
         return n;
     };
     DOM.matchTag = function(node, pat) {
-        return A.some(pat, function(v){
+        return A.some(pat, function(v) {
             if (typeof v == 'string') {
-                return v == (node.tagName||'').toLowerCase();
+                try {
+                    return v == (node.tagName || '').toLowerCase();
+                } catch (e) {
+                    return ''
+                }
             } else if (v instanceof Array) {
-                return v[0] == (node.tagName||'').toLowerCase()
-                    && DOM.matchAttr(node, v[1]);
+                return v[0] == (node.tagName || '').toLowerCase() && DOM.matchAttr(node, v[1]);
             } else {
                 return false;
             }
@@ -366,7 +388,9 @@ ExtractContentJS.Lib.DOM = (function() {
             } else if (pat instanceof RegExp) {
                 return pat.test(val);
             } else if (pat instanceof Array) {
-                return A.some(pat,function(v){return test(v,val);});
+                return A.some(pat, function(v) {
+                    return test(v, val);
+                });
             } else if (pat instanceof Object) {
                 for (var prop in pat) {
                     var n = node[prop];
@@ -393,7 +417,9 @@ ExtractContentJS.Lib.DOM = (function() {
             } else if (pat instanceof RegExp) {
                 return pat.test(val);
             } else if (pat instanceof Array) {
-                return A.some(pat,function(v){return test(v,val);});
+                return A.some(pat, function(v) {
+                    return test(v, val);
+                });
             }
             return false;
         };
@@ -416,11 +442,15 @@ if (typeof ExtractContentJS == 'undefined') {
     var A = ns.Lib.A;
     var DOM = ns.Lib.DOM;
 
-    var Leaf = Util.inherit(function(node/*, depth, inside, limit*/) {
+    var Leaf = Util.inherit(function(node /*, depth, inside, limit*/ ) {
         var depth = arguments[1] || 0;
         var inside = arguments[2] || {};
         var limit = arguments[3] || 1048576;
-        var leaf = { node: node, depth: depth, inside: inside };
+        var leaf = {
+            node: node,
+            depth: depth,
+            inside: inside
+        };
 
         leaf.statistics = function() {
             var t = (DOM.text(node) || '').replace(/\s+/g, ' ');
@@ -438,8 +468,10 @@ if (typeof ExtractContentJS == 'undefined') {
 
         return leaf;
     }, {
-        commonAncestor: function(/* leaves */) {
-            var ar = A.map(arguments, function(v){ return v.node; });
+        commonAncestor: function( /* leaves */ ) {
+            var ar = A.map(arguments, function(v) {
+                return v.node;
+            });
             if (ar.length < 2) {
                 return ar[0];
             }
@@ -462,7 +494,10 @@ if (typeof ExtractContentJS == 'undefined') {
             s = s.replace(/\s+/g, '');
             return s.length != 0;
         });
-        var block = { score: 0, leaves: leaves };
+        var block = {
+            score: 0,
+            leaves: leaves
+        };
         block.commonAncestor = function() {
             return Leaf.commonAncestor.apply(null, block.leaves);
         };
@@ -470,9 +505,13 @@ if (typeof ExtractContentJS == 'undefined') {
     };
 
     var Content = function(c) {
-        var self = { _content: c };
+        var self = {
+            _content: c
+        };
 
-        self.asLeaves = function(){ return self._content; };
+        self.asLeaves = function() {
+            return self._content;
+        };
         self.asNode = function() {
             if (self._node) return self._node;
             self._node = Leaf.commonAncestor.apply(null, self._content);
@@ -481,10 +520,10 @@ if (typeof ExtractContentJS == 'undefined') {
         self.asTextFragment = function() {
             if (self._textFragment) return self._textFragment;
             if (self._content.length < 1) return '';
-            self._textFragment = A.reduce(self._content, function(prev,curr) {
+            self._textFragment = A.reduce(self._content, function(prev, curr) {
                 var s = DOM.text(curr.node);
-                s = s.replace(/^\s+/g,'').replace(/\s+$/g,'');
-                s = s.replace(/\s+/g,' ');
+                s = s.replace(/^\s+/g, '').replace(/\s+$/g, '');
+                s = s.replace(/\s+/g, ' ');
                 return prev + s;
             }, '');
             return self._textFragment;
@@ -503,8 +542,11 @@ if (typeof ExtractContentJS == 'undefined') {
         return self;
     };
 
-    ns.LayeredExtractor = function(/* handler, filter */) {
-        var self = { handler: arguments[0] || [], filter: arguments[1] || {} };
+    ns.LayeredExtractor = function( /* handler, filter */ ) {
+        var self = {
+            handler: arguments[0] || [],
+            filter: arguments[1] || {}
+        };
 
         self.factory = {
             getHandler: function(name) {
@@ -528,9 +570,12 @@ if (typeof ExtractContentJS == 'undefined') {
 
         self.extract = function(d) {
             var url = d.location.href;
-            var res = { title: d.title, url: d.location.href };
+            var res = {
+                title: d.title,
+                url: d.location.href
+            };
             var len = self.handler.length;
-            for (var i=0; i < len; i++) {
+            for (var i = 0; i < len; i++) {
                 var content = self.handler[i].extract(d, url, res);
                 if (!content) continue;
 
@@ -553,7 +598,7 @@ if (typeof ExtractContentJS == 'undefined') {
     };
     ns.LayeredExtractor.Handler = {};
 
-    ns.LayeredExtractor.Handler.Heuristics = function(/*option, pattern*/) {
+    ns.LayeredExtractor.Handler.Heuristics = function( /*option, pattern*/ ) {
         var self = {
             name: 'Heuristics',
             content: [],
@@ -561,9 +606,9 @@ if (typeof ExtractContentJS == 'undefined') {
                 threshold: 180,
                 minLength: 150,
                 factor: {
-                    decay:      0.75,
-                    noBody:     0.72,
-                    continuous: 1.16//1.62
+                    decay: 0.75,
+                    noBody: 0.72,
+                    continuous: 1.16 //1.62
                 },
                 punctuationWeight: 10,
                 minNoLink: 8,
@@ -578,31 +623,26 @@ if (typeof ExtractContentJS == 'undefined') {
             pat: Util.inherit(arguments[1], {
                 sep: [
                     'div', 'center', 'td',
-                    'h1', 'h2'
-                ],
+                    'h1', 'h2'],
                 waste: [
-                        /Copyright|All\s*Rights?\s*Reserved?/i
-                ],
+                    /Copyright|All\s*Rights?\s*Reserved?/i],
                 affiliate: [
-                        /amazon[a-z0-9\.\/\-\?&]+-22/i
-                ],
-                list: [ 'ul', 'dl', 'ol' ],
-                li:   [ 'li', 'dd' ],
-                a:    [ 'a' ],
-                form: [ 'form' ],
-                noContent: [ 'frameset' ],
+                    /amazon[a-z0-9\.\/\-\?&]+-22/i],
+                list: ['ul', 'dl', 'ol'],
+                li: ['li', 'dd'],
+                a: ['a'],
+                form: ['form'],
+                noContent: ['frameset'],
                 ignore: [
                     'iframe',
-                    //'img',
-                    'script',
+                //'img',
+                'script',
                     'style',
                     'select',
-                    'noscript',
-                    [ 'div', {
-                        id: [ /more/, /menu/, /side/, /navi/, /foot/ ],
-                        className: [ /more/, /menu/, /side/, /navi/, /foot/ ]
-                    } ]
-                ],
+                    'noscript', ['div', {
+                    id: [/more/, /menu/, /side/, /navi/, /foot/],
+                    className: [/more/, /menu/, /side/, /navi/, /foot/]
+                }]],
                 ignoreStyle: {
                     display: 'none',
                     visibility: 'hidden'
@@ -616,7 +656,7 @@ if (typeof ExtractContentJS == 'undefined') {
             var block = new Block(leaves);
 
             block.eliminateLinks = function() {
-                var st = A.map(block.leaves, function(v){
+                var st = A.map(block.leaves, function(v) {
                     return v.statistics();
                 });
                 if (!st.length) return '';
@@ -648,13 +688,12 @@ if (typeof ExtractContentJS == 'undefined') {
                 var val = 0;
                 if (block.leaves.length > 0) {
                     val += A.reduce(block.leaves, function(prev, curr) {
-                        return prev
-                            + DOM.countMatchTagAttr(curr.node, 'a', 'href',
-                                                    self.pat.affiliate);
+                        return prev + DOM.countMatchTagAttr(curr.node, 'a', 'href',
+                        self.pat.affiliate);
                     }, 0);
                 }
                 val /= 2.0;
-                val += A.reduce(self.pat.waste, function(prev,curr) {
+                val += A.reduce(self.pat.waste, function(prev, curr) {
                     return prev + Util.countMatch(block._nolink, curr);
                 }, 0);
                 return val;
@@ -727,11 +766,11 @@ if (typeof ExtractContentJS == 'undefined') {
                         list: inside.list || DOM.matchTag(node, self.pat.list),
                         li: inside.li || DOM.matchTag(node, self.pat.li)
                     };
-                    for (var i=0; i < len; i++) {
+                    for (var i = 0; i < len; i++) {
                         var c = children[i];
                         var f = DOM.matchTag(c, sep);
                         flush(f);
-                        rec(c, depth+1, flags);
+                        rec(c, depth + 1, flags);
                         flush(f);
                     }
                     if (!len) {
@@ -747,8 +786,8 @@ if (typeof ExtractContentJS == 'undefined') {
             }
         });
 
-        self.extract = function(d/*, url, res*/) {
-            var isNoContent = function(v){
+        self.extract = function(d /*, url, res*/ ) {
+            var isNoContent = function(v) {
                 return d.getElementsByTagName(v).length != 0;
             };
             if (A.some(self.pat.noContent, isNoContent)) return self;
@@ -762,7 +801,7 @@ if (typeof ExtractContentJS == 'undefined') {
             var last;
 
             var len = blocks.length;
-            for (var i=0; i < len; i++) {
+            for (var i = 0; i < len; i++) {
                 var block = blocks[i];
                 if (last) {
                     continuous /= self.opt.factor.continuous;
@@ -789,7 +828,9 @@ if (typeof ExtractContentJS == 'undefined') {
                 }
             }
 
-            self.blocks = res.sort(function(a,b){return b.score-a.score;});
+            self.blocks = res.sort(function(a, b) {
+                return b.score - a.score;
+            });
             var best = A.first(self.blocks);
             if (best) {
                 self.content = best.leaves;
@@ -801,7 +842,7 @@ if (typeof ExtractContentJS == 'undefined') {
         return self;
     };
 
-    ns.LayeredExtractor.Handler.GoogleAdSection = function(/*opt*/) {
+    ns.LayeredExtractor.Handler.GoogleAdSection = function( /*opt*/ ) {
         var self = {
             name: 'GoogleAdSection',
             content: [],
@@ -823,11 +864,19 @@ if (typeof ExtractContentJS == 'undefined') {
         var stIgnore = 1;
         var stSection = 2;
 
-        self.inSection = function(){return A.last(self.state)==stSection;};
-        self.ignore = function(){self.state.push(stIgnore);}
-        self.section = function(){self.state.push(stSection);}
-        self.end = function(){ if (self.state.length) self.state.pop(); };
-        self.parse = function(node/*, depth*/) {
+        self.inSection = function() {
+            return A.last(self.state) == stSection;
+        };
+        self.ignore = function() {
+            self.state.push(stIgnore);
+        }
+        self.section = function() {
+            self.state.push(stSection);
+        }
+        self.end = function() {
+            if (self.state.length) self.state.pop();
+        };
+        self.parse = function(node /*, depth*/ ) {
             var depth = arguments[1] || 0;
             if (node.nodeName == '#comment') {
                 if (pat.ignore.test(node.nodeValue)) {
@@ -844,9 +893,9 @@ if (typeof ExtractContentJS == 'undefined') {
             if (depth >= self.opt.limit.recursion) return;
             var children = node.childNodes;
             var len = children.length;
-            for (var i=0; i < len; i++) {
+            for (var i = 0; i < len; i++) {
                 var c = children[i];
-                self.parse(c, depth+1);
+                self.parse(c, depth + 1);
             }
             if (!len && self.inSection()) {
                 self.content.push(new Leaf(node, depth));
@@ -854,13 +903,12 @@ if (typeof ExtractContentJS == 'undefined') {
             return;
         };
 
-        self.extract = function(d/*, url, res*/) {
+        self.extract = function(d /*, url, res*/ ) {
             self.parse(d);
-            self.blocks = [ new Block(self.content) ];
+            self.blocks = [new Block(self.content)];
             return self.content;
         };
 
         return self;
     };
 })(ExtractContentJS);
-
