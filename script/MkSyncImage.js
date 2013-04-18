@@ -14,6 +14,7 @@ MkSyncImage.prototype.download = function(callback, errorFn, error404, noRespons
         xhr.responseType = 'arraybuffer';
         xhr.onerror = function() {
             errorFn && errorFn(self, arguments);
+            console.log(arguments)
             console.log('retrieve remote image xhr onerror')
         }
         xhr.onabort = function() {
@@ -24,7 +25,7 @@ MkSyncImage.prototype.download = function(callback, errorFn, error404, noRespons
         //     console.log(arguments);
         // }
         xhr.onload = function(e) {
-            if (this.status == 200) {
+            if (this.status == 200 || this.status == 304) {
                 var suffix = url.split('.'),
                     blob = new Blob([this.response], {
                         type: 'image/' + suffix[suffix.length - 1]
@@ -47,7 +48,6 @@ MkSyncImage.prototype.download = function(callback, errorFn, error404, noRespons
                 error404(self)
             }
         }
-        console.log(url);
         xhr.send(null);
     } catch (e) {
         console.log(e);
@@ -91,7 +91,6 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
             images[i].download(function(img, file) {
                 img.file = file;
                 img.state = downloadState.success;
-                console.log('img.state:' + img.state);
                 uploadPackDataForm();
             }, function(img) {
                 img.state = downloadState.error;
@@ -109,7 +108,6 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
     }
 
     function uploadPackDataForm() {
-        console.log('ooxx');
         var imagesCompletedAry = getCompletedAry();
         if (imagesCompletedAry == completedImageState.error) {
             failCallback && failCallback();
@@ -198,19 +196,11 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
             }
         }
         completedCount = successCount + error404Count + noResponseCount;
-        console.log('images.length:' + images.length);
-        console.log('successCount:' + successCount);
-        console.log('error404Count:' + error404Count);
-        console.log('noResponseCount:' + noResponseCount);
-        console.log('errorCount:' + errorCount);
         if (completedCount == images.length) {
-            console.log('completedCount:' + successCount);
             return completedAry;
-        } else if (errorCount > 0 && (completedCount +errorCount) == images.length) {
-            console.log('completedImageState.error:' + successCount);
+        } else if (errorCount > 0 && (completedCount + errorCount) == images.length) {
             return completedImageState.error;
         } else {
-            console.log('completedImageState.waitting:' + successCount);
             return completedImageState.waitting;
         }
     }

@@ -2,17 +2,19 @@ var MkFileSystem = {};
 MkFileSystem.files = [];
 MkFileSystem.removeFiles = function() {
     var errorFn = MkFileSystem.onFileError;
-    for (var idx in MkFileSystem.files) {
-        var file = MkFileSystem.files[idx],
+    for (var i = 0; i < MkFileSystem.files.length; i++) {
+        var file = MkFileSystem.files.shift(),
             fileSize = file.size,
             fileName = file.name;
-        window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
-            fs.root.getFile(fileName, {}, function(fileEntry) {
-                fileEntry.remove(function() {
-                    console.log('File ' + fileName + ' removed.');
+        (function(fileName, fileSize) {
+            window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
+                fs.root.getFile(fileName, {}, function(fileEntry) {
+                    fileEntry.remove(function() {
+                        console.log('File ' + fileName + ' removed.');
+                    }, errorFn);
                 }, errorFn);
             }, errorFn);
-        }, errorFn);
+        })(fileName, fileSize);
     }
 }
 MkFileSystem.onFileError = function(err) {
@@ -31,6 +33,7 @@ MkFileSystem.create = function(size, fileName, blob, callback, errorFn) {
         }, function(fileEntry) {
             fileEntry.createWriter(function(fileWriter) {
                 fileWriter.onwrite = function(e) {
+                    console.log('Write completed.');
                     fileEntry.file(function(file) {
                         MkFileSystem.files.push(file)
                         callback(file);
