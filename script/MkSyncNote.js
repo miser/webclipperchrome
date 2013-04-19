@@ -70,15 +70,6 @@ MkSyncNote.prototype.post = function(successCallback, failCallback) {
         url: option.baseUrl + '/note/save',
         data: JSON.stringify(note),
         success: function(data) {
-            if (data.error) {
-                if (data.error == 'notlogin') {
-                    NotifyTips.showPersistent('syncTaskAdd');
-                } else {
-                    NotifyTips.showPersistent('SaveNoteFailed');
-                }
-                failCallback && failCallback();
-                return;
-            }
             successCallback && successCallback(data);
         },
         error: function(jqXHR, textStatus, errorThrown) {
@@ -138,10 +129,10 @@ MkSyncNote.prototype.saveImages = function() {
                     htmlQueueItem[j].image.src = serverImgData.Url;
                 }
             }
-            NotifyTips.showPersistent('uploadImagesSuccess');
+            // NotifyTips.showPersistent('uploadImagesSuccess');
             self.syncState.setState('save.images.success')
         }, function() {
-            NotifyTips.showPersistent('uploadImagesFail');
+            // NotifyTips.showPersistent('uploadImagesFail');
             self.syncState.setState('save.images.fail', arguments)
         })
     } else {

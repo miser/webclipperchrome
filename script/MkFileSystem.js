@@ -20,6 +20,7 @@ MkFileSystem.removeFiles = function() {
 MkFileSystem.onFileError = function(err) {
     for (var p in FileError) {
         if (FileError[p] == err.code) {
+            console.log(arguments);
             console.log('Error code: ' + err.code + 'Error info: ' + p);
             break;
         }

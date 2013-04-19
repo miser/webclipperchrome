@@ -46,10 +46,8 @@ MKSyncTask.prototype.syncNormal = function(callback) {
             } else if (state == 'save.saveContent.fail') {
                 note.delete();
             } else if (state == 'note.delete.success') {
-
                 self.end('fail');
             } else if (state == 'note.delete.fail') {
-
                 self.end('fail');
             }
         })
@@ -102,9 +100,7 @@ MKSyncTask.prototype.end = function(state) {
     MKSyncTaskQueue.end();
 }
 MKSyncTask.prototype.repeat = function(callback) {
-    NotifyTips.showTemporary('noteRepeatSave');
+    NotifyTips.showTemporary('noteRepeatSave',this.note.note.title);
     console.log('repeat');
-    // this.note.note.noteid = '';
-    // this.state.off("changeState");
     this.sync(callback);
 }

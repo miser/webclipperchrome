@@ -2,7 +2,8 @@ var MKSyncTaskQueue = function() {
 	var queue = [],
 		currentTask,
 		errorQueue = [],
-		nextTaskTimer;
+		nextTaskTimer,
+		baseUrl = chrome.i18n.getMessage('baseUrl');
 
 	var errorContentTemplate = chrome.i18n.getMessage('noteErrorTemplate');
 
@@ -12,17 +13,21 @@ var MKSyncTaskQueue = function() {
 			return true;
 		}
 		if (currentTask.processState == 'success') {
+			var viewUrl = baseUrl + '/note/previewfull/' + currentTask.note.note.noteid;
 			if (queue.length > 0) {
-				NotifyTips.showPersistent('syncTaskSuccess', currentTask.note.note.title, function() {
-					NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
-				});
+				NotifyTips.showPersistent('syncTaskSuccess', [currentTask.note.note.title, viewUrl]);
 			} else if (errorQueue.length > 0) {
-				NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
+				NotifyTips.showTemporary('syncTaskSuccess', {
+					content: [currentTask.note.note.title, viewUrl],
+					timer: 1000 * 5
+				}, function() {
 					NotifyTips.refresh();
 				});
 			} else {
-				NotifyTips.showTemporary('syncTaskSuccess', currentTask.note.note.title, function() {
-					console.log('clear')
+				NotifyTips.showTemporary('syncTaskSuccess', {
+					content: [currentTask.note.note.title, viewUrl],
+					timer: 1000 * 5
+				}, function() {
 					NotifyTips.clear();
 				});
 			}
@@ -30,12 +35,28 @@ var MKSyncTaskQueue = function() {
 			return true;
 		} else if (currentTask.processState == 'fail') {
 			if (++currentTask.errorCount >= 3) {
-				MKSyncTaskQueue.addError(currentTask);
-				currentTask = null;
-				if (queue.length > 0) {
-					NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
+				if (currentTask.failed == true) {
+					if (queue.length > 0) {
+						NotifyTips.showPersistent('syncTaskFail', currentTask.note.note.title);
+					} else if (errorQueue.length > 0) {
+						NotifyTips.showTemporary('syncTaskFail', currentTask.note.note.title, function() {
+							NotifyTips.refresh();
+						});
+					} else {
+						NotifyTips.showTemporary('syncTaskFail', currentTask.note.note.title, function() {
+							NotifyTips.clear();
+						});
+					}
+					currentTask = null;
 				} else {
-					NotifyTips.showError()
+					currentTask.failed = true;
+					MKSyncTaskQueue.addError(currentTask);
+					currentTask = null;
+					if (queue.length > 0) {
+						NotifyTips.showPersistent('nextTask', queue[0].note.note.title);
+					} else {
+						NotifyTips.showError()
+					}
 				}
 				return true;
 			} else {
@@ -80,14 +101,19 @@ var MKSyncTaskQueue = function() {
 			//每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
 			currentTask.sync(function() {
 				clearTimeout(nextTaskTimer)
+				console.log(new Date());
 				nextTaskTimer = setTimeout(function() {
+					console.log(new Date());
 					MKSyncTaskQueue.start();
-				}, 1000 * 5)
+				}, 1000 * 10)
 			})
 		},
 		end: function() {
 			if (endCurrentTask()) {
-				MKSyncTaskQueue.start();
+				clearTimeout(nextTaskTimer)
+				nextTaskTimer = setTimeout(function() {
+					MKSyncTaskQueue.start();
+				}, 1000 * 10)
 			}
 		},
 		addError: function(task) {
@@ -114,7 +140,6 @@ var MKSyncTaskQueue = function() {
 			task.errorCount = 0;
 			errorQueue = errorQueue.removeAt(index);
 			MKSyncTaskQueue.add(task);
-			MKSyncTaskQueue.start();
 			NotifyTips.refresh(); //重新刷新提示
 		},
 		remove: function(taskGuid) {

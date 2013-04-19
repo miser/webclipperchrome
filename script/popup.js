@@ -59,7 +59,7 @@
             });
             $('#resetbtn').click(function(e) {
                 noteContent.html('').focus();
-                self.title.val('');
+                // self.title.val('');
                 parent.postMessage({
                     name: 'resetfrommaikupopup'
                 }, '*');

@@ -7,23 +7,18 @@ MkSyncImage.prototype.download = function(callback, errorFn, error404, noRespons
         var image = self.image,
             url = image.src,
             xhr = new XMLHttpRequest();
-        // if(url.indexOf('http://kkpgv2.xunlei.com/?u=kkpv') >= 0){
-        //     return;
-        // }
+
         xhr.open('GET', url, true);
         xhr.responseType = 'arraybuffer';
         xhr.onerror = function() {
             errorFn && errorFn(self, arguments);
-            console.log(arguments)
             console.log('retrieve remote image xhr onerror')
         }
         xhr.onabort = function() {
             errorFn && errorFn(self, arguments);
             console.log('retrieve remote image xhr onabort')
         }
-        // xhr.onprogress = function() {
-        //     console.log(arguments);
-        // }
+
         xhr.onload = function(e) {
             if (this.status == 200 || this.status == 304) {
                 var suffix = url.split('.'),

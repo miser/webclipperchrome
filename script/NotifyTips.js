@@ -6,9 +6,9 @@
 var NotifyTips = function() {
     var persistent,
     temporary, notification, notificationTimer, clipperError = chrome.i18n.getMessage('ClipperNotReady');
-
     var sendMessage = function(data) {
         if (!chrome.extension.sendMessage) return;
+        console.log(data.content);
         chrome.extension.sendMessage({
             name: 'sendnotification',
             data: data
@@ -37,26 +37,28 @@ var NotifyTips = function() {
         };
         notification.show();
     }
-    var getContent = function() {
-        var arg = arguments;
-        while (typeof arg[0] == 'object') {
-            arg = arg[0];
+    var getContent = function(key, options) {
+        var tipsContent;
+        if (options instanceof Array) {
+            tipsContent = options;
+        } else if (typeof options == 'string') {
+            tipsContent = [options];
+        } else {
+            tipsContent =  options.content;
         }
-        if (!arg && arg.length <= 0) return;
-        var key = arg[0];
+        if (!(tipsContent instanceof Array)) {
+            tipsContent = [];
+        }
         var tips = chrome.i18n.getMessage(key);
-        var ary = [].slice.call(arg, 1);
-        for (var i = 0; i < ary.length; i++) {
-            var content = ary[i];
-            if (content == undefined) continue;
-
-            var reg = new RegExp('\\{' + i + '\\}', 'g')
-            tips = tips.replace(reg, ary[i]);
+        for (var i = 0; i < tipsContent.length; i++) {
+            var content = tipsContent[i],
+                tipsReg = new RegExp('\\{' + i + '\\}', 'g');
+            tips = tips.replace(tipsReg, content);
         }
         return tips;
     }
-    var getData = function() {
-        var content = getContent(arguments)
+    var getData = function(key, options) {
+        var content = getContent(key, options)
         var data = {
             content: content,
             title: '',
@@ -75,45 +77,52 @@ var NotifyTips = function() {
     var showTipsTemporary = function() {
         clearTimeout(notificationTimer);
         sendMessage(temporary.data);
-        notificationTimer = setTimeout(function() {
-            temporary && temporary.callback && temporary.callback();
-            var errorQueue = MKSyncTaskQueue.getErrorQueue();
-            if (persistent && persistent.data) {
-                sendMessage(persistent.data);
-            } else if (errorQueue && errorQueue.length > 0) {
-                NotifyTips.refresh();
-            } else {
-                notification && notification.cancel();
-            }
-        }, 2000);
-    }
-    var getCallback = function(args) {
-        if (args && args[args.length - 1] && args[args.length - 1] instanceof Function) {
-            return args[args.length - 1];
-        }
-        return;
-    }
 
-    var init = function(args) {
-        var data = getData(args);
+        (function(temporary) {
+            notificationTimer = setTimeout(function() {
+                temporary && temporary.callback && temporary.callback();
+                var errorQueue = MKSyncTaskQueue.getErrorQueue();
+                if (persistent && persistent.data) {
+                    sendMessage(persistent.data);
+                } else if (errorQueue && errorQueue.length > 0) {
+                    NotifyTips.refresh();
+                } else {
+                    notification && notification.cancel();
+                }
+            }, temporary.timer || 2000);
+        })(temporary)
+    }
+    // var getCallback = function(args) {
+    //     if (args && args[args.length - 1] && args[args.length - 1] instanceof Function) {
+    //         return args[args.length - 1];
+    //     }
+    //     return;
+    // }
+
+    var init = function(key, options, callback) {
+        var data = getData(key, options);
         var obj = {};
         obj.data = data;
-        obj.callback = getCallback(args);
+        obj.data.key = key;
+        obj.timer = options.timer;
+        obj.callback = callback; //getCallback(args);
         return obj;
     }
 
 
     return {
-        showPersistent: function() {
+        showPersistent: function(key, options, callback) {
             if (!notification) create();
-            persistent = init(arguments);
+            options = options || {};
+            persistent = init(key, options, callback);
             //需要给notification.html 第一次加载的时候调用
             this.notificationData = persistent.data;
             showTipsPersistent();
         },
-        showTemporary: function() {
+        showTemporary: function(key, options, callback) {
             if (!notification) create();
-            temporary = init(arguments);
+            options = options || {};
+            temporary = init(key, options, callback);
             //需要给notification.html 第一次加载的时候调用
             this.notificationData = temporary.data;
             showTipsTemporary();
