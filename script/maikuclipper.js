@@ -3,6 +3,13 @@
 (function($) {
     'use strict';
     var _rootWin = window;
+    /**
+     * 每个元素替换样式后，需要替换他的‘background-repeat: no-repeat no-repeat;’
+     * 因为在ie8之前及chrome,ff旧版本不支持background-repeat有2个参数（http://www.css88.com/book/css/properties/background/background-repeat.htm）
+     * 这样会导致使用默认值repeat使得界面样式出错
+     *  不知道为什么在使用 el.style.backgroundRepeat 或 $(el).css('background-repeat','no-repeat') 还是background-repeat: no-repeat no-repeat; 所以强行替换返回的文本字符串
+     */
+    var regBackgroundRepeat = new RegExp('background-repeat: no-repeat no-repeat;', 'ig')
     window.maikuClipper = {
         init: function() {
             var self = this;
@@ -120,7 +127,7 @@
                 }).insertAfter($(commonAncestorContainer));
                 self.getHTMLByNode(tempNode);
                 var html = tempNode.html();
-                title = document.title;//tempNode.text();
+                title = document.title; //tempNode.text();
                 tempNode.remove();
                 content = html;
             }
@@ -670,7 +677,7 @@
                 self.removeAttrs(cloneEl);
             }
             if (nodeTagName == 'body') {
-                return cloneNode[0].innerHTML;
+                return cloneNode[0].innerHTML.replace(regBackgroundRepeat, 'background-repeat: no-repeat;');
             } else {
                 color = nodeCSSStyleDeclaration.color;
                 styleObj = {};
@@ -692,7 +699,7 @@
                         $(cloneNode[0]).attr('src', window.location.protocol + '//' + window.location.host + '/' + imgSrc);
                     }
                 }
-                return cloneNode[0].outerHTML;
+                return cloneNode[0].outerHTML.replace(regBackgroundRepeat, 'background-repeat: no-repeat;');
             }
         },
         filterTagsObj: {

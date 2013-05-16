@@ -320,7 +320,7 @@
                 }
             } else {
                 //remove content by uid
-                $('#' + data.uid).remove();
+                $('#' + data.uid,self.noteContent).remove();
             }
         }
     }
