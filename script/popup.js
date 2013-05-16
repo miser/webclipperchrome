@@ -19,10 +19,11 @@
                 return false;
             });
             self.title = $('#titleinp');
-            var mouseDowned, startPageY, noteContent = $('#notecontent'),
+            var mouseDowned, startPageY, noteContent = $('#notecontent').contents().find('body'),
                 body = $('body'),
                 initTaHeight = parseInt(noteContent.css('height')),
                 changeStep;
+                noteContent.attr('contenteditable','true')
             $(document).mousemove(function(e) {
                 if (mouseDowned) {
                     changeStep = e.pageY - startPageY;
@@ -327,3 +328,8 @@
         maikuNotePopup.init();
     });
 })();
+var messageChange = function(e) {    
+      console.log(arguments)    
+        
+    };    
+window.addEventListener('message', messageChange, false);
