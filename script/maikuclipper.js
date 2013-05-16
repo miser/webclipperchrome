@@ -257,7 +257,6 @@
             return obj.wrap;
         },
         createPopup: function() {
-            console.log('createPopup');
             var self = this;
             if (self.isCreatedPopup) return;
             self.popupZIndex = 20120726;
@@ -308,7 +307,6 @@
                         self.initDivHeight = parseInt(self.popupInstance.css('height'));
                         break;
                     case 'closefrommaikupopup':
-                        console.log('close');
                         self.closePopup();
                         break;
                     case 'resetfrommaikupopup':
