@@ -194,7 +194,13 @@ MkSyncImages.prototype.upload = function(successCallback, failCallback) {
         if (completedCount == images.length) {
             return completedAry;
         } else if (errorCount > 0 && (completedCount + errorCount) == images.length) {
-            return completedImageState.error;
+
+            if(errorCount / (completedCount + errorCount) > 0.2){
+                return completedImageState.error;
+            }
+            else{
+                return completedAry;
+            }
         } else {
             return completedImageState.waitting;
         }
