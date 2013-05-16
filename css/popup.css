@@ -306,6 +306,7 @@ input::-webkit-input-placeholder {
     min-height:100px;
     max-height:440px;
     overflow:auto;
+    width: 418px;
 }
 .notecontentwrap .notecontent img{
     max-width:100%;

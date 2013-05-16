@@ -341,14 +341,14 @@
         createInspector: function(autoExtractContent) {
             var self = this,
                 body = $(document.body);
-            self.cover = $('<div mkclip="true"></div>').css({
+            self.cover = $('<div mkclip="true" cover></div>').css({
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 opacity: 0,
                 'z-index': self.popupZIndex - 1
             });
-            self.mask = $('<div mkclip="true"></div>').css({
+            self.mask = $('<div mkclip="true" mask></div>').css({
                 'border-radius': 5,
                 border: '3px solid #a2cca2',
                 position: 'absolute',
@@ -361,7 +361,8 @@
             });
             var backgroundImageSrc = chrome.extension.getURL('css/images/sprite.png'),
                 //'chrome-extension://__MSG_@@extension_id__/sprites.png'
-                markInner = $('<div mkclip="true"></div>').css({
+                //遮罩半透明
+                markInner = $('<div mkclip="true" markInner></div>').css({
                     background: '#ccffcc',
                     height: '100%',
                     position: 'absolute',
@@ -370,7 +371,8 @@
                     opacity: 0.35,
                     width: '100%'
                 }),
-                markExpandor = $('<div mkclip="true"></div>').css({
+                //扩展按钮
+                markExpandor = $('<div mkclip="true" markExpandor></div>').css({
                     background: 'url(' + backgroundImageSrc + ') -120px -66px no-repeat',
                     height: 20,
                     width: 20,
@@ -380,7 +382,8 @@
                     left: 1,
                     'z-index': self.popupZIndex - 1
                 }).attr('title', chrome.i18n.getMessage('MarkExpandorTip')),
-                markClose = $('<span mkclip="true"></span').css({
+                //关闭按钮
+                markClose = $('<span mkclip="true" markClose></span').css({
                     background: 'url(' + backgroundImageSrc + ') -120px -44px no-repeat',
                     height: 20,
                     width: 20,
@@ -390,7 +393,8 @@
                     left: 23,
                     'z-index': self.popupZIndex - 1
                 }).attr('title', chrome.i18n.getMessage('CancelTip'));
-            self.mark = $('<div mkclip="true"></div>').css({
+            //最外层的框
+            self.mark = $('<div mkclip="true" mark></div>').css({
                 'border-radius': 5,
                 border: '3px solid #a2cca2',
                 position: 'absolute',
@@ -401,8 +405,8 @@
             }).append(markInner).append(markExpandor).append(markClose);
             //有些网页会把div强制为position:relative 导致选择区显示出错
             //手动将position强制为默认值
-            //http://www.smashingmagazine.com/2013/02/28/desktop-wallpaper-calendar-march-2013/
-            self.markContainer = $('<div mkclip="true" style="position:static"></div>').appendTo(body).append(self.cover).append(self.mask);
+            //测试 http://www.smashingmagazine.com/2013/02/28/desktop-wallpaper-calendar-march-2013/
+            self.markContainer = $('<div mkclip="true" style="position:static" markContainer></div>').appendTo(body).append(self.cover).append(self.mask);
             self.markedElements = {}; //save all marked page element
             self.marks = {}; //save all marks
             self.markCount = 0;
@@ -430,7 +434,7 @@
                     //没有选择的时候选择整个网页
                     var extractedContent = document.body;
                     setTimeout(function() {
-                        var title = document.title && document.title.split('-')[0];
+                        var title = document.title;
                         self.addMark($(extractedContent), self.mark.clone(), title.trim());
                     }, 0);
                 }
