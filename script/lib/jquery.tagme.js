@@ -129,19 +129,19 @@ along with this program.  If not, see < http://www.gnu.org/licenses/ >.
                             }
                         }
                     },
-                    checkRemoveTag = function(tag) {
-                        var onDeleteResult = true,
-                            opt = tagUL.data('options');
-                        if ($.isFunction(opt.onDelete)) {
-                            onDeleteResult = onDeleteResult = opt.onDelete.call(this, tag.text());
+                        checkRemoveTag = function(tag) {
+                            var onDeleteResult = true,
+                                opt = tagUL.data('options');
+                            if ($.isFunction(opt.onDelete)) {
+                                onDeleteResult = onDeleteResult = opt.onDelete.call(this, tag.text());
+                            }
+                            if (onDeleteResult) {
+                                removeTag(tag, tagUL, tagInput);
+                            }
+                            if ($.isFunction(opt.afterDelete)) {
+                                opt.afterDelete.call(this, tag.text());
+                            }
                         }
-                        if (onDeleteResult) {
-                            removeTag(tag, tagUL, tagInput);
-                        }
-                        if ($.isFunction(opt.afterDelete)) {
-                            opt.afterDelete.call(this, tag.text());
-                        }
-                    }
                     tagInput = $('<input>', {
                         class: 'tagme-input',
                         placeholder: options.inputPlaceHolder
@@ -150,16 +150,32 @@ along with this program.  If not, see < http://www.gnu.org/licenses/ >.
                             ti = $(this),
                             opt = tagUL.data('options');
                         var val = ti.val();
+                        /*
                         var tempSubVal = val.substring(0, 1);
                         if (tempSubVal === opt.addKey[0] || tempSubVal === opt.addKey[1]) {
                             val = val.substring(1);
                         }
-                        if (code === 13 || code === 188 || code === opt.addKey.charCodeAt(0)) {
+                        */
+                        if (code === 13 || code === 188) {
                             checkAddTagValue($.trim(val));
+                            return false;
                         } else if (code === 8 && val === '') {
                             checkRemoveTag(ti.parent().prev());
                         }
-                    });
+                    }).keyup(function(e) {
+                        var ti = $(this),
+                            val = ti.val(),
+                            opt = tagUL.data('options');
+                        var lastChar = val.substring(val.length - 1);
+                        var keys = opt.addKey;
+                        for (var i in keys) {
+                            if (keys[i] == lastChar) {
+                                checkAddTagValue($.trim(val.substring(0, val.length - 1)));
+                                ti.val('');
+                                return false;
+                            }
+                        }
+                    })
                     tagUL.append($('<li>', {
                         class: 'tagme-inputwrap'
                     }).append(tagInput));
