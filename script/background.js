@@ -4,6 +4,7 @@
 //(since it has no chrome.extension.sendMessage method and Blob() constructor is illegal and etc.)
 (function($) {
     'use strict';
+    var chromeSchemeReg = /chrome:\/\/.*/ig;
     window.maikuNote = {
         init: function() {
             var self = this;
@@ -24,35 +25,19 @@
                     ReadyErrorNotify.show('BrowserTooLower', 30000);
                     return;
                 }
+                var match = tab.url.match(/^(.*?):/),
+                    scheme = match[1].toLowerCase();
+                if (chromeSchemeReg.test(tab.url) || (scheme != "http" && scheme != "https")) {
+                    ReadyErrorNotify.show('notClipPageInfo');
+                    return;
+                }
                 self.createPopup();
             });
         },
         createPopup: function() {
-            var getCurrentWindowCallback = function(win) {
-                var getSelectedTabCallback = function(tab) {
-                    var match, scheme, banned;
-                    if (tab.url) { // Won't be set in Safari for file:// urls.
-                        match = tab.url.match(/^(.*?):/);
-                        scheme = match[1].toLowerCase();
-                        if (scheme != "http" && scheme != "https") banned = true;
-                    } else {
-                        banned = true;
-                    }
-                    if (banned) {
-                        ReadyErrorNotify.show('notClipPageInfo');
-                    }
-                }
-
-                chrome.tabs.getSelected(win.id, getSelectedTabCallback);
-            }
-            chrome.windows.getLastFocused(getCurrentWindowCallback);
-            try {
-                chrome.tabs.executeScript(null, {
-                    code: "try{maikuClipper.createPopup();}catch(e){console.log(e);var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
-                });
-            } catch (e) {
-                console.log(e)
-            }
+            chrome.tabs.executeScript(null, {
+                code: "try{maikuClipper.createPopup();}catch(e){console.log(e);var port = chrome.extension.connect({name: 'maikuclipperisnotready'});port.postMessage();}"
+            });
         },
         closePopup: function() {
             chrome.tabs.executeScript(null, {
@@ -143,8 +128,6 @@
                 contexts: ['page'],
                 title: chrome.i18n.getMessage('clipPageUrlContextMenu'),
                 onclick: function(info, tab) {
-                    // var content = '<img src="' + tab.favIconUrl + '" title="' + tab.title + '" alt="' + tab.title + '"/>' + '<a href="' + tab.url + '" title="' + tab.title + '">' + tab.url + '</a>';
-                    // self.saveNote(tab.title, tab.url, content);
                     var note = {
                         title: tab.title,
                         sourceurl: tab.url,
@@ -361,14 +344,11 @@
                         top: 0
                     }, function(win) {
                         var tabId = win.tabs[0].id;
-                        console.log('tabId:' + tabId);
                         chrome.tabs.onUpdated.addListener(function HandlerConnect(id, info) {
                             if (info.status == 'loading' && id == tabId) {
                                 self.getUser(function(user) {
                                     if (user) {
                                         chrome.tabs.onUpdated.removeListener(HandlerConnect);
-                                        console.log('win.id:' + win.id);
-                                        console.log(win);
                                         chrome.windows.remove(win.id, callback(user));
                                     }
                                 });
@@ -484,15 +464,13 @@
         initTabEvents: function() {
             var self = this;
             chrome.tabs.onActivated.addListener(function(info, tab) {
-                //console.log('tab changed');
-                chrome.tabs.executeScript(null, {
-                    code: "maikuClipper.getHost();"
-                });
+                ReadyErrorNotify.close();
             });
             chrome.tabs.onUpdated.addListener(function(id, info, tab) {
+                if (chromeSchemeReg.test(tab.url)) {
+                    return;
+                }
                 if (info.status == 'loading') {
-                    //console.log('tab updated');
-                    //
                     maikuNoteUtil.createParticularContextMenu(tab.url.split('/')[2]);
                 }
                 if (info.status == 'complete') {
@@ -510,13 +488,11 @@
                             self.userData = null;
                         }
                     });
+
+                    chrome.tabs.executeScript(null, {
+                        code: "maikuClipper.getHost();"
+                    });
                 }
-            });
-            chrome.tabs.onHighlighted.addListener(function(highlightInfo) {
-                ReadyErrorNotify.close();
-            });
-            chrome.tabs.onUpdated.addListener(function(id, info, tab) {
-                ReadyErrorNotify.close();
             });
         },
         initExtensionRequest: function() {
@@ -528,7 +504,6 @@
                         self.getuserHandlerRequest(sender, request.refresh);
                         break;
                     case 'popuplogin':
-                        console.log('popuplogin');
                         self.checkLogin(function(user) {
                             chrome.tabs.sendRequest(sender.tab.id, {
                                 name: 'userlogined',
@@ -681,7 +656,32 @@
         syncNote: function(note, option) {
             option = option || {};
             option.baseUrl = chrome.i18n.getMessage('baseUrl');
+            var tags = note.tags || "";
+            this.addTags(tags.split(','));
             MKSyncTaskQueue.add(new MKSyncTask(note, option));
+        },
+        addTags: function(noteTags) {
+            function compareDifferent(ary1, ary2) {
+                var differentAry = [],
+                    ary2len = ary2.length - 1;
+                for (var i = 0; i < ary1.length; i++) {
+                    var compareValue = ary1[i];
+                    if (!compareValue) continue;
+                    for (var j = 0; j <= ary2len; j++) {
+                        var val = ary2[j];
+                        if (compareValue == val) {
+                            break;
+                        } else if (compareValue != val && j == ary2len) {
+                            differentAry.push(compareValue)
+                        }
+                    }
+                }
+                return differentAry;
+            }
+            if (!this.userData) return;
+
+            var newAddTags = compareDifferent(noteTags, this.userData.tags);
+            this.userData.tags = this.userData.tags.concat(newAddTags)
         }
     };
     Object.defineProperties(maikuNote, {

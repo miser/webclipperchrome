@@ -106,7 +106,7 @@
         getSendObjByLink: function(link) {
             return {
                 linkUrl: link.href,
-                title: link.title || link.text || link.href,
+                title: link.title || link.text || document.title,
                 text: link.text || link.href
             }
         },
@@ -191,7 +191,7 @@
                 });
             var h1 = $('h1').eq(0);
             port.postMessage({
-                title: h1.text() || document.title,
+                title:  document.title,
                 sourceurl: location.href,
                 content: self.getHTMLByNode($(document.body))
             });
