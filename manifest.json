@@ -26,7 +26,7 @@
    "name": "__MSG_ExtensionName__",
    "options_page": "options.html",
    "permissions": ["tabs", "contextMenus", "cookies", "management", "pageCapture", "notifications", "http://*/*", "https://*/*", "unlimitedStorage"],
-   "version": "3.3.3",
+   "version": "3.3.5",
    "web_accessible_resources": ["popup.html", "loading.html"],
    "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'"
 }
