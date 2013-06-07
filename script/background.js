@@ -194,9 +194,6 @@
             var self = this;
             chrome.extension.onConnect.addListener(function(port) {
                 switch (port.name) {
-                    case 'gethost':
-                        self.gethostHandlerConnect(port);
-                        break;
                     case 'savenotefrompopup':
                         self.savenotefrompopupHandler(port);
                         break;
@@ -228,12 +225,6 @@
                     default:
                         break;
                 }
-            });
-        },
-        gethostHandlerConnect: function(port) {
-            var self = this;
-            port.onMessage.addListener(function(data) {
-                maikuNoteUtil.createParticularContextMenu(data.host);
             });
         },
         savenotefrompopupHandler: function(port) {
@@ -463,15 +454,27 @@
         },
         initTabEvents: function() {
             var self = this;
+
+            //创建菜单
+            function createParticularContextMenu(host) {
+                switch (host) {
+                    case 'weibo.com':
+                    case 'www.weibo.com':
+                    case 's.weibo.com':
+                    case 'e.weibo.com':
+                        window.contextMenuForSites.weibo();
+                        break;
+                    default:
+                        window.maikuNote.initContextMenus();
+                        break;
+                }
+            }
             chrome.tabs.onActivated.addListener(function(info, tab) {
                 ReadyErrorNotify.close();
             });
             chrome.tabs.onUpdated.addListener(function(id, info, tab) {
                 if (chromeSchemeReg.test(tab.url)) {
                     return;
-                }
-                if (info.status == 'loading') {
-                    maikuNoteUtil.createParticularContextMenu(tab.url.split('/')[2]);
                 }
                 if (info.status == 'complete') {
                     //maybe login, maybe logout, update user data
@@ -488,10 +491,7 @@
                             self.userData = null;
                         }
                     });
-
-                    chrome.tabs.executeScript(null, {
-                        code: "maikuClipper.getHost();"
-                    });
+                    createParticularContextMenu(tab.url.split('/')[2])
                 }
             });
         },

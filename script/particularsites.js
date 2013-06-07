@@ -2,7 +2,7 @@
 //All right reserved
 (function() {
 	'use strict';
-	var contextMenuForSites = {
+	window.contextMenuForSites = {
 		init: function() {
 			var self = this;
 			chrome.extension.onConnect.addListener(function(port) {
@@ -50,21 +50,6 @@
 				});
 			});
 		},
-	}
-	window.maikuNoteUtil = {
-		createParticularContextMenu: function(host) {
-			switch (host) {
-				case 'weibo.com':
-				case 'www.weibo.com':
-				case 's.weibo.com':
-				case 'e.weibo.com':
-					contextMenuForSites.weibo();
-					break;
-				default:
-					window.maikuNote.initContextMenus();
-					break;
-			}
-		}
 	}
 	contextMenuForSites.init();
 })();

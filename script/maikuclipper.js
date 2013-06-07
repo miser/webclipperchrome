@@ -24,14 +24,6 @@
             });
             self.addWindowEventListener();
         },
-        getHost: function() {
-            var port = chrome.extension.connect({
-                name: 'gethost'
-            });
-            port.postMessage({
-                host: location.host
-            });
-        },
         getAllImages: function() {
             var imgs = document.querySelectorAll('img'),
                 filteredImg = {},
