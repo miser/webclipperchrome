@@ -30,4 +30,20 @@
     Array.prototype.removeAt = function(index) {
         return this.slice(0, index).concat(this.slice(++index));
     }
+
+    var MkUtil;
+    window.MkUtil = MkUtil = {};
+    MkUtil.parseWebDomain = function(url) {
+        url = url.replace(/.*\:\/\//, '');
+        var urlAry = url.split('/');
+
+        if (urlAry.length == 0) return '';
+        url = urlAry[0];
+
+        var dotAry = url.split('.');
+        if (dotAry.length == 0 || dotAry.length == 1) return '';
+
+        url = dotAry[dotAry.length - 2] + '.' + dotAry[dotAry.length - 1];
+        return url;
+    }
 })()

@@ -101,9 +101,7 @@ var MKSyncTaskQueue = function() {
 			//每隔5秒执行下个任务不然短时间一直请求服务器，服务器会认为非法
 			currentTask.sync(function() {
 				clearTimeout(nextTaskTimer)
-				console.log(new Date());
 				nextTaskTimer = setTimeout(function() {
-					console.log(new Date());
 					MKSyncTaskQueue.start();
 				}, 1000 * 10)
 			})

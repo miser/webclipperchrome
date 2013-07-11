@@ -244,7 +244,6 @@ _gaq.push(['_trackPageview']);
             });
 
             function triggerDropList(isBody) {
-                console.log(11)
                 if (self.dropList && self.dropList.is(':visible')) {
                     self.dropList.hide();
                 } else if (!self.dropList.is(':visible') && !isBody) {

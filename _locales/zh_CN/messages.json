@@ -89,11 +89,15 @@
    },
    "ViewText": {
       "description": "view",
-      "message": "\u67E5\u770B" 
+      "message": "\u67E5\u770B"
    },
    "baseUrl": {
       "description": "main url of maiku",
       "message": "http://note.sdo.com"
+   },
+   "staticUrl": {
+      "description": "static resource url of maiku",
+      "message": "http://notedev-static.sdo.com"
    },
    "clipAllImageContextMenu": {
       "description": "save all image",
@@ -170,7 +174,7 @@
       "message": "{0} \u540C\u6B65\u6210\u529F <a href='{1}' target='_blank' id='closebtn'>\u67E5\u770B</a>"
    },
    "syncTaskFail": {
-      "message": "{0} 剪集出错，请尝试重试或手动保存"
+      "message": "{0} 剪集出错 <span style='color:#666'>(页面引用图片可能无法直接获取，请确保网络连通)</span>，请尝试重试或手动保存"
    },
    "nextTask": {
       "message": "\u6B63\u5728\u51C6\u5907\u4E0B\u6761\u540C\u6B65\u7B14\u8BB0 {0}"
@@ -224,7 +228,7 @@
       "message": "{0} \u7B14\u8BB0\u4E0A\u4F20\u51FA\u9519\uFF0C\u6B63\u5728\u91CD\u65B0\u4E0A\u4F20"
    },
    "noteErrorTemplate": {
-      "message": "<li>{0} \u526A\u96C6\u51FA\u9519\uFF0C\u662F\u5426\u9700\u8981 <a href='javascript:void(0)' class='repeat-btn' data-guid='{1}'>\u91CD\u8BD5</a>  <a href='javascript:void(0)' class='cancel-btn' data-guid='{1}'>\u53D6\u6D88</a></li>"
+      "message": "<li>{0} 剪集出错 <span style='color:#666'>(页面引用图片可能无法直接获取，请确保网络连通)</span>，是否需要 <a href='javascript:void(0)' class='repeat-btn' data-guid='{1}'>\u91CD\u8BD5</a>  <a href='javascript:void(0)' class='cancel-btn' data-guid='{1}'>\u53D6\u6D88</a></li>"
    },
    "notClipPageInfo": {
       "message": "\u65E0\u6CD5\u526A\u96C6\u8BE5\u9875\u4FE1\u606F"

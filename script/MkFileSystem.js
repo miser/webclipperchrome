@@ -10,7 +10,7 @@ MkFileSystem.removeFiles = function() {
             window.requestFileSystem(TEMPORARY, fileSize, function(fs) {
                 fs.root.getFile(fileName, {}, function(fileEntry) {
                     fileEntry.remove(function() {
-                        console.log('File ' + fileName + ' removed.');
+                        // console.log('File ' + fileName + ' removed.');
                     }, errorFn);
                 }, errorFn);
             }, errorFn);
@@ -20,8 +20,8 @@ MkFileSystem.removeFiles = function() {
 MkFileSystem.onFileError = function(err) {
     for (var p in FileError) {
         if (FileError[p] == err.code) {
-            console.log(arguments);
-            console.log('Error code: ' + err.code + 'Error info: ' + p);
+            // console.log(arguments);
+            // console.log('Error code: ' + err.code + 'Error info: ' + p);
             break;
         }
     }
@@ -34,14 +34,14 @@ MkFileSystem.create = function(size, fileName, blob, callback, errorFn) {
         }, function(fileEntry) {
             fileEntry.createWriter(function(fileWriter) {
                 fileWriter.onwrite = function(e) {
-                    console.log('Write completed.');
+                    // console.log('Write completed.');
                     fileEntry.file(function(file) {
                         MkFileSystem.files.push(file)
                         callback(file);
                     })
                 }
                 fileWriter.onerror = function(e) {
-                    console.log('Write failed: ' + e.toString());
+                    // console.log('Write failed: ' + e.toString());
                 };
                 fileWriter.write(blob);
             }, errorFn)

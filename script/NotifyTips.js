@@ -8,7 +8,6 @@ var NotifyTips = function() {
     temporary, notification, notificationTimer, clipperError = chrome.i18n.getMessage('ClipperNotReady');
     var sendMessage = function(data) {
         if (!chrome.extension.sendMessage) return;
-        console.log(data.content);
         chrome.extension.sendMessage({
             name: 'sendnotification',
             data: data

@@ -185,7 +185,6 @@
             } else {
                 NotifyTips.showPersistent('NotLogin');
                 self.checkLogin(function() {
-                    console.log('insureLogin');
                     callback && callback();
                 });
             }
@@ -219,7 +218,6 @@
                         self.actionfrompopupinspecotrHandler(port);
                         break;
                     case 'noarticlefrompage':
-                        console.log('error noarticlefrompage');
                         self.noarticlefrompageHandler(port);
                         break;
                     default:
@@ -521,7 +519,6 @@
                         break;
                     case 'clicksavebtnwithoutloginpopup':
                         //popup, click save button, button user has not logined
-                        console.log('clicksavebtnwithoutloginpopup');
                         self.checkLogin(function(user) {
                             chrome.tabs.sendRequest(sender.tab.id, {
                                 name: 'clicksavebtnafteruserloginedpopup',
@@ -640,7 +637,6 @@
                     url: extensionguideUrl,
                     selected: true
                 });
-                console.log("Extension Updated");
             }
             var currVersion = getVersion();
             var prevVersion = localStorage['version']

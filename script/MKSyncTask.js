@@ -7,7 +7,6 @@ var MKSyncTask = function(noteData, option) {
     this.guid = String.createGuid();
 }
 MKSyncTask.prototype.sync = function(callback) {
-    console.log('sync');
     if(this.option.isSaveMHTML == true && this.option.tab){
         this.syncAsMTHML(callback);
     }

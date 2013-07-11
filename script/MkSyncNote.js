@@ -1,4 +1,4 @@
-var scriptRegex =/<script[^>]*>(.|\n)*?<\/script>/ig
+var scriptRegex = /<script[^>]*>(.|\n)*?<\/script>/ig
 var MkSyncNote = function(noteData, option, stateEvent) {
     var defaultData = {
         title: '[未命名笔记]',
@@ -15,7 +15,7 @@ var MkSyncNote = function(noteData, option, stateEvent) {
     this.note = {};
     $.extend(this.note, defaultData, noteData);
     var noteContent = this.note.notecontent;
-    noteContent = noteContent.replace(scriptRegex,"");
+    noteContent = noteContent.replace(scriptRegex, "");
     this.noteEl = $('<div></div>').append(noteContent);
     this.note.notecontent = ''; //this.noteEl.html();
     if (!stateEvent) {
@@ -26,14 +26,12 @@ var MkSyncNote = function(noteData, option, stateEvent) {
     }
 }
 MkSyncNote.prototype.init = function() {
-    console.log('noteInit');
     var self = this,
         option = self.option,
         content = self.note.notecontent;
     this.images = [];
     NotifyTips.showPersistent('noteInit', self.note.title);
     self.post(function(data) {
-        console.log('note.init.success');
         self.note.noteid = data.Note.NoteID;
         self.note.notecontent = content;
         NotifyTips.showPersistent('noteInitSuccess', self.note.title);
