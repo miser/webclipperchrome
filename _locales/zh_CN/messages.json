@@ -173,8 +173,14 @@
    "syncTaskSuccess": {
       "message": "{0} \u540C\u6B65\u6210\u529F <a href='{1}' target='_blank' id='closebtn'>\u67E5\u770B</a>"
    },
+   "syncTaskSuccess2": {
+      "message": "{0} \u540C\u6B65\u6210\u529F"
+   },
    "syncTaskFail": {
       "message": "{0} 剪集出错 <span style='color:#666'>(页面引用图片可能无法直接获取，请确保网络连通)</span>，请尝试重试或手动保存"
+   },
+   "syncTaskFail": {
+      "message": "{0} 剪集出错 (页面引用图片可能无法直接获取，请确保网络连通)，请重试或手动保存"
    },
    "nextTask": {
       "message": "\u6B63\u5728\u51C6\u5907\u4E0B\u6761\u540C\u6B65\u7B14\u8BB0 {0}"
