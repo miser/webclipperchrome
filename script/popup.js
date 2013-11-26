@@ -11,7 +11,7 @@ _gaq.push(['_trackPageview']);
             self.initExtensionRequest();
             self.initCategories();
             self.initTags();
-            self.getUser();
+            self.getUser('init');
         },
         addEvents: function() {
             var self = this;
@@ -23,14 +23,17 @@ _gaq.push(['_trackPageview']);
             });
             self.title = $('#titleinp');
             var mouseDowned, startPageY, noteContent = $('#notecontent').contents().find('body'),
+                contentEl = $('#notecontent'),
                 body = $('body'),
                 initTaHeight = parseInt(noteContent.css('height')),
+                initContentHeight = parseInt(contentEl.css('height')),
                 changeStep;
             noteContent.attr('contenteditable', 'true')
             $(document).mousemove(function(e) {
                 if (mouseDowned) {
                     changeStep = e.pageY - startPageY;
                     noteContent.css('height', initTaHeight + changeStep);
+                    contentEl.css('height', initContentHeight + changeStep);
                     parent.postMessage({
                         name: 'changeheightfrommaikupopup',
                         param: changeStep
@@ -41,6 +44,7 @@ _gaq.push(['_trackPageview']);
                 body.removeClass('not-selectable');
                 noteContent.removeClass('not-selectable');
                 initTaHeight = parseInt(noteContent.css('height'));
+                initContentHeight = parseInt(contentEl.css('height'));
                 parent.postMessage({
                     name: 'stopchangeheightfrommaikupopup'
                 }, '*');
@@ -126,7 +130,7 @@ _gaq.push(['_trackPageview']);
                         t.data('panel-position', 'bottom').find('.mkbm-util-icon').addClass('mkbm-down');
                     }
                 } else if (t.is('.mkbm-refresh-info')) {
-                    self.getUser(true);
+                    self.getUser('refresh');
                 } else if (t.is('.mkbm-mouse-select')) {
                     if (t.data('isdisabled') == 'true') {
                         parent.postMessage({
@@ -184,7 +188,7 @@ _gaq.push(['_trackPageview']);
             } else {
                 self.userlogoutedHandlerRequest();
             }
-            if (refresh) return; //user refresh infomation, no need to create inspector again
+            if (refresh == 'refresh') return; //user refresh infomation, no need to create inspector again
             self.createInspector(settings.autoExtractContent);
             if (settings.autoExtractContent == false) {
                 self.autoExtractContent.removeClass('mkbm-enable').addClass('mkbm-disabled').attr('title', chrome.i18n.getMessage('AutoExtractContentDisabled'));
@@ -206,7 +210,7 @@ _gaq.push(['_trackPageview']);
                 return false;
             });
             self.setCategories(userData, settings);
-            self.setTags(userData)
+            self.setTags(userData);
             self.isLogin = true;
         },
         userlogoutedHandlerRequest: function() {
@@ -228,7 +232,7 @@ _gaq.push(['_trackPageview']);
             self.dropList = category.find('.mkbm-category-select');
             self.displayNameWrap = self.displayName.parent();
             self.displayNameWrap.data('title', self.displayNameWrap.attr('title'));
-            
+
             self.displayNameWrap.click(function(e) {
                 if (!self.isLogin) return false;
                 triggerDropList();

@@ -392,11 +392,11 @@ background-position: -36px -232px;
     background-color: #fff;
     border: 1px solid #cbcbcb;
     border-radius: 3px;
-    margin: 8px 5px 0 0;
+    margin: 0 5px 0 0;
 }
 .mkbm-account-info {
     position:absolute;
-    top:9px;
+    top:7px;
     left:0;
     font-size:12px;
 }
@@ -410,6 +410,7 @@ background-position: -36px -232px;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
+    vertical-align: middle;
 }
 .mkbm-account-info .username:hover{
 text-decoration:none;
@@ -419,11 +420,13 @@ text-decoration:none;
 background-position: 0 -106px !important;
 }
 .logoutwrap{
-display:none;
+    vertical-align: bottom;
+    display:none;
 }
 .logout{
-color: #999;
-text-decoration: none;
+    vertical-align: bottom;
+    color: #999;
+    text-decoration: none;
 }
 .logout:hover{
 text-decoration: underline;
